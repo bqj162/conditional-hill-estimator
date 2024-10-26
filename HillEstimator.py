@@ -4,8 +4,6 @@ from scipy.stats import norm, rankdata
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
 
-from hill import gamma_automatic
-
 
 class HillEstimator:
     def __init__(self, user_input, hill_estimate = None, grid_resolution = 200):
@@ -21,14 +19,13 @@ class HillEstimator:
 
     def gamma_full(self, X, Y):
         x_vals = np.linspace(0.03, 0.97, num = self.grid_resolution)
-        results = np.full((len(x_vals), 100), np.nan)
+        results = np.full((self.grid_resolution, self.grid_resolution), np.nan)
 
         for i in range(len(x_vals)):
-            fit = gamma_automatic(x_vals[i], X, Y)
-            gammas = fit['gammas']
-            results[i, :len(gammas)] = gammas[:100]
+            fit = self.gamma_automatic(x_vals[i], X, Y)
+            results[i,] = fit['gammas']
 
-        return pd.DataFrame(data= {'X':x_vals, 'K': fit['ks'], 'gamma_k_x': results})
+        return {'X':x_vals, 'K': fit['ks'], 'gamma_k_x': results}
 
     def gamma_automatic(self, x, X, Y):
 
@@ -47,13 +44,14 @@ class HillEstimator:
 
         ks = np.floor(np.linspace(0.01 * n_x, 0.5 * n_x, self.grid_resolution)).astype(int)
         gammas = np.full(n_x, np.nan)
-        qkn = np.full(n_x, np.nan)
 
-        for k in ks:
+
+        for i in range(self.grid_resolution):
+            k = ks[i]
             idx = np.min(np.where(s < k / n_x))
             qn = y_sorted[idx]
-            qkn[k] = qn
-            gammas[k] = (n_x / k) * np.sum(w_sorted[idx:] * np.log(y_sorted[idx:] / qn))
+
+            gammas[i] = (n_x / k) * np.sum(w_sorted[idx:] * np.log(y_sorted[idx:] / qn))
 
         # Return results
         return {'ks': ks, 'gammas': gammas[~np.isnan(gammas)]}
