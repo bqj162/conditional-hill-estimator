@@ -10,8 +10,8 @@ class HillEstimator:
         self.hill_estimate = None
 
     def estimate(self):
-        X = self.time_series.covariate()
-        Y = self.user_input.get_rv_process()
+        X = self.time_series.covariate
+        Y = self.time_series.rv
         self.hill_estimate = self.gamma_full(X = X, Y = Y)
 
 
