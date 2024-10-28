@@ -16,10 +16,12 @@ class Plot:
         dates = self.user_input.get_time()
         x = self.user_input.get_covariate_process()
         y = self.user_input.get_rv_process()
+        #positive_indicies = [y > 0]
+
         ts_plot = make_subplots(rows=2, cols=1, subplot_titles=("covariate process", "rv process"))
         ts_plot.add_trace(go.Scatter(x = dates, y = x), row=1, col=1)
         ts_plot.add_trace(go.Scatter(x = dates, y = y), row=2, col=1)
-        #ts_plot.show()
+        ts_plot.show()
         return ts_plot
 
     def plot_3d(self):
