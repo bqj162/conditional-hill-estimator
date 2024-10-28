@@ -1,7 +1,4 @@
-from idlelib.pyparse import trans
-
 import pandas as pd
-from StockTicker import StockTicker
 from TimeSeries import TimeSeries
 from UserInput import UserInput
 import argparse
@@ -14,10 +11,11 @@ args = parser.parse_args()
 
 
 def parse_command_line_arguments(argv : list[str]):
-    if args.stocks is not None and args.time_series is not None:
+    if args.stock_tickers is not None and args.time_series is not None:
         raise Exception("Either provide stock tickers or your own time series, but not both.")
 
-    transform_type = parse_transform_type(args.transform_type)
+    stock_tickers = None
+    time_series = None
 
     if args.stock_tickers is not None:
         stock_tickers = args.stock_tickers.split(",")
@@ -26,7 +24,9 @@ def parse_command_line_arguments(argv : list[str]):
     else:
         raise Exception("Need to provide either stock tickers or your own time series.")
 
-    return UserInput(stock_tickers=stock_tickers, transform_type=transform_type, time_series=time_series)
+    transform_type = parse_transform_type(args.transform_type)
+    user_input = UserInput(stock_tickers=stock_tickers, transform_type=transform_type, time_series=time_series)
+    return user_input
 
 
 
@@ -37,7 +37,7 @@ def parse_transform_type(transform_type):
     return transform_type
 
 
-def parse_time_series_file(filename : str):
+def parse_time_series_file(filename):
     time_series_df = pd.read_excel(io=filename)
     time_series = TimeSeries(time=time_series_df['time'], covariate=time_series_df['covariate'], rv=time_series_df['rv'])
     return time_series

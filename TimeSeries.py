@@ -24,8 +24,8 @@ class TimeSeries:
             return
 
     def log_difference(self):
-       self.covariate = np.diff(math.log(self.covariate))
-       self.rv = np.diff(math.log(self.rv))
+       self.covariate = np.diff(np.log(self.covariate))
+       self.rv = np.diff(np.log(self.rv))
 
     def splitter(self,index):
        return TimeSeries(time=self.time[index],covariate=self.covariate[index], rv =self.rv[index])

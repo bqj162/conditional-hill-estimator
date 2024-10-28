@@ -5,9 +5,9 @@ class StockTicker:
         self.ticker = ticker
         self.start = start
         self.end = end
-        self.prices_open = None
+        self.prices = None
 
-    def get_prices_open(self):
-        if self.prices_open is None:
-            self.prices_open = yf.download(self.ticker, start=self.start, end=self.end, auto_adjust=True)
-        return self.prices_open
+    def get_prices(self):
+        if self.prices is None:
+            self.prices = yf.download(self.ticker, start=self.start, end=self.end, auto_adjust=True)
+        return self.prices
