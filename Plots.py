@@ -1,16 +1,10 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from HillEstimator import HillEstimator
-class Plot:
-    def __init__(self, user_input):
-        self.user_input = user_input
-        self.hill_estimator = HillEstimator(user_input = user_input)
-        self.hill_estimator.estimate()
-        self.x       = self.hill_estimator.hill_estimate['X']
-        self.k       = self.hill_estimator.hill_estimate['K']
-        self.gamma   = self.hill_estimator.hill_estimate['gamma_k_x']
-        self.three_d = self.plot_3d()
-        self.scatter = self.plot_2d()
+class Plots:
+    def __init__(self, time_series, hill_estimate):
+        self.time_series = time_series
+        self.hill_estimate = hill_estimate
 
     def plot_2d(self):
         dates = self.user_input.get_time()

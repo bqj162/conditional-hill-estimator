@@ -1,18 +1,16 @@
 import numpy as np
-import pandas as pd
 from scipy.stats import norm, rankdata
 from scipy.stats import gaussian_kde
-import matplotlib.pyplot as plt
 
 
 class HillEstimator:
-    def __init__(self, user_input, hill_estimate = None, grid_resolution = 200):
-        self.user_input = user_input
-        self.hill_estimate = hill_estimate
+    def __init__(self, time_series, grid_resolution = 200):
+        self.time_series = time_series
         self.grid_resolution = grid_resolution
+        self.hill_estimate = None
 
     def estimate(self):
-        X = self.user_input.get_covariate_process()
+        X = self.time_series.covariate()
         Y = self.user_input.get_rv_process()
         self.hill_estimate = self.gamma_full(X = X, Y = Y)
 
