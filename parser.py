@@ -1,15 +1,40 @@
-import pandas as pd
+from idlelib.pyparse import trans
 
+import pandas as pd
+from StockTicker import StockTicker
 from TimeSeries import TimeSeries
 from UserInput import UserInput
+import argparse
+valid_transform_types = [None, "log_diff"]
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--stocks", dest="stock_tickers")
+parser.add_argument("-t", "--transform_type", dest="transform_type")
+parser.add_argument("-f", "--file_path", dest="time_series")
+args = parser.parse_args()
+
 
 def parse_command_line_arguments(argv : list[str]):
-    if len(argv) != 3:
-        raise Exception("Wrong usage: conditional_hill_estimator.py [time_series_file] [kernel] [...]")
+    if args.stocks is not None and args.time_series is not None:
+        raise Exception("Either provide stock tickers or your own time series, but not both.")
 
-    time_series = parse_time_series_file(argv[1])
+    transform_type = parse_transform_type(args.transform_type)
 
-    return UserInput(time_series)
+    if args.stock_tickers is not None:
+        stock_tickers = args.stock_tickers.split(",")
+    elif args.time_series is not None:
+        time_series = parse_time_series_file(args.time_series)
+    else:
+        raise Exception("Need to provide either stock tickers or your own time series.")
+
+    return UserInput(stock_tickers=stock_tickers, transform_type=transform_type, time_series=time_series)
+
+
+
+
+def parse_transform_type(transform_type):
+    if transform_type not in valid_transform_types:
+        raise Exception(f"Not a valid transform_type, please use: {[transform_type for transform_type in valid_transform_types]}")
+    return transform_type
 
 
 def parse_time_series_file(filename : str):
@@ -18,5 +43,5 @@ def parse_time_series_file(filename : str):
     return time_series
 
 
-def parse_stock_tickers():
+def convert_prices_to_time_series(prices):
     pass
