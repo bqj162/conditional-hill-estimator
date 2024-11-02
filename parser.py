@@ -1,9 +1,8 @@
-from ast import parse
-
 import pandas as pd
 from TimeSeries import TimeSeries
 from UserInput import UserInput
 import argparse
+
 valid_transform_types = [None, "log_diff"]
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--stocks", dest="stock_tickers")

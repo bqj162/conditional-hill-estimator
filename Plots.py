@@ -1,6 +1,6 @@
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from HillEstimator import HillEstimator
+
 class Plots:
     def __init__(self, time_series, hill_estimate):
         self.time_series = time_series

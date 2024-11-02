@@ -1,6 +1,3 @@
-import math
-from os.path import split
-
 import numpy as np
 class TimeSeries:
     def __init__(self, time, covariate, rv):
