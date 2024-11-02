@@ -1,3 +1,5 @@
+from ast import parse
+
 import pandas as pd
 from TimeSeries import TimeSeries
 from UserInput import UserInput
@@ -7,6 +9,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--stocks", dest="stock_tickers")
 parser.add_argument("-t", "--transform_type", dest="transform_type")
 parser.add_argument("-f", "--file_path", dest="time_series")
+parser.add_argument("-fd", "--from_date", dest="from_date")
+parser.add_argument("-td", "--to-date", dest="to_date")
 args = parser.parse_args()
 
 
@@ -25,7 +29,7 @@ def parse_command_line_arguments(argv : list[str]):
         raise Exception("Need to provide either stock tickers or your own time series.")
 
     transform_type = parse_transform_type(args.transform_type)
-    user_input = UserInput(stock_tickers=stock_tickers, transform_type=transform_type, time_series=time_series)
+    user_input = UserInput(stock_tickers=stock_tickers, from_date=args.from_date, to_date=args.to_date, transform_type=transform_type, time_series=time_series)
     return user_input
 
 

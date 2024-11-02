@@ -1,7 +1,7 @@
 import yfinance as yf
 
 class StockTicker:
-    def __init__(self, ticker, start="2010-01-01", end="2020-12-31"):
+    def __init__(self, ticker, start="2010-01-01", end=None):
         self.ticker = ticker
         self.start = start
         self.end = end

@@ -2,8 +2,10 @@ from StockTicker import StockTicker
 from TimeSeries import TimeSeries
 
 class UserInput:
-    def __init__(self, stock_tickers=None, transform_type=None, time_series=None):
+    def __init__(self, stock_tickers=None, from_date=None, to_date=None, transform_type=None, time_series=None):
         self.stock_tickers = stock_tickers
+        self.from_date = from_date
+        self.to_date = to_date
         self.time_series = time_series
         self.transform_type = transform_type
         self.init()
@@ -18,7 +20,7 @@ class UserInput:
     def generate_time_series_from_stock_tickers(self):
         prices = []
         for stock_ticker in self.stock_tickers:
-            price = StockTicker(stock_ticker).get_prices()
+            price = StockTicker(stock_ticker, start=self.from_date, end=self.to_date).get_prices()
             prices.append(price.Open)
         prices = prices[0].join(prices[1])
         self.time_series = TimeSeries(time=prices.index.values, covariate=prices.values[:,0], rv=prices.values[:,1])
