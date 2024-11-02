@@ -11,6 +11,8 @@ def main():
                 hill_estimator = HillEstimator(time_series)
                 hill_estimate = hill_estimator.estimate() # estimate includes x, k, gamma
                 plots = Plots(time_series, hill_estimate)
+                plots.plot_2d()
+                plots.plot_3d()
 
 
 

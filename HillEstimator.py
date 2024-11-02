@@ -13,6 +13,7 @@ class HillEstimator:
         X = self.time_series.covariate
         Y = self.time_series.rv
         self.hill_estimate = self.gamma_full(X = X, Y = Y)
+        return self.hill_estimate
 
 
     def gamma_full(self, X, Y):
