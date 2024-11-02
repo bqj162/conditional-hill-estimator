@@ -24,8 +24,8 @@ class TimeSeries:
             return
 
     def log_difference(self):
-        self.covariate = np.diff(np.log(self.covariate))
-        self.rv = np.diff(np.log(self.rv))
+        self.covariate = np.diff(np.log(self.covariate.astype(float)))
+        self.rv = np.diff(np.log(self.rv.astype(float)))
         self.time = self.time[1:]
 
 

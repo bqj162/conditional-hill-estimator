@@ -7,7 +7,7 @@ from KDEpy import FFTKDE
 class HillEstimator:
     def __init__(self, time_series, grid_resolution = 200):
         self.time_series = time_series
-        self.grid_resolution = grid_resolution
+        self.grid_resolution = min(grid_resolution, len(time_series.covariate))
         self.hill_estimate = None
 
     def estimate(self):
@@ -42,14 +42,13 @@ class HillEstimator:
         s = 1 - np.cumsum(w_sorted)
 
         ks = np.floor(np.linspace(0.01 * n_x, 0.5 * n_x, self.grid_resolution)).astype(int)
-        gammas = np.full(n_x, np.nan)
+        gammas = np.full(self.grid_resolution, np.nan)
 
 
         for i in range(self.grid_resolution):
             k = ks[i]
             idx = np.min(np.where(s < k / n_x))
             qn = y_sorted[idx]
-
             gammas[i] = (n_x / k) * np.sum(w_sorted[idx:] * np.log((y_sorted[idx:] / qn).astype(float)))
 
         # Return results

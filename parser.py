@@ -9,7 +9,7 @@ parser.add_argument("-s", "--stocks", dest="stock_tickers")
 parser.add_argument("-t", "--transform_type", dest="transform_type")
 parser.add_argument("-f", "--file_path", dest="time_series")
 parser.add_argument("-fd", "--from_date", dest="from_date")
-parser.add_argument("-td", "--to-date", dest="to_date")
+parser.add_argument("-td", "--to_date", dest="to_date")
 args = parser.parse_args()
 
 
@@ -41,7 +41,7 @@ def parse_transform_type(transform_type):
 
 
 def parse_time_series_file(filename):
-    time_series_df = pd.read_excel(io=filename)
+    time_series_df = pd.read_csv(filename)
     time_series = TimeSeries(time=time_series_df.values[:,0], covariate_name= time_series_df.keys()[1], covariate=time_series_df.values[:,1], rv_name = time_series_df.keys()[2], rv=time_series_df.values[:,2])
     return time_series
 
