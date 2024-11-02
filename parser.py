@@ -42,7 +42,7 @@ def parse_transform_type(transform_type):
 
 def parse_time_series_file(filename):
     time_series_df = pd.read_excel(io=filename)
-    time_series = TimeSeries(time=time_series_df['time'], covariate=time_series_df['covariate'], rv=time_series_df['rv'])
+    time_series = TimeSeries(time=time_series_df.values[:,0], covariate_name= time_series_df.keys()[1], covariate=time_series_df.values[:,1], rv_name = time_series_df.keys()[2], rv=time_series_df.values[:,2])
     return time_series
 
 

@@ -21,7 +21,8 @@ class Plots:
 
     def plot_3d(self):
         fig = go.Figure(data=[go.Surface(z = self.hill_estimate['gamma_k_x'],  y = self.hill_estimate['X'], x = self.hill_estimate['K'])])
-        fig.update_layout(title='gamma_k_x', autosize=True)
+        title = "Gamma_k_n estimates for " + "Covariate process: " + self.time_series.covariate_name + ", Regularly varying process: " + self.time_series.rv_name
+        fig.update_layout(title=title, autosize=True)
         fig.update_scenes(xaxis_title_text='k_n',
                           yaxis_title_text='x',
                           zaxis_title_text='gamma_k_x')

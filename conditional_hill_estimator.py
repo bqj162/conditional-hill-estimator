@@ -16,12 +16,5 @@ def main():
         html = HTML(plot_list)
         html.generate_HTML()
 
-
-
-
-
-
-
-
 if __name__ == "__main__":
         main()

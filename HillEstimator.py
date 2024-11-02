@@ -50,7 +50,7 @@ class HillEstimator:
             idx = np.min(np.where(s < k / n_x))
             qn = y_sorted[idx]
 
-            gammas[i] = (n_x / k) * np.sum(w_sorted[idx:] * np.log(y_sorted[idx:] / qn))
+            gammas[i] = (n_x / k) * np.sum(w_sorted[idx:] * np.log((y_sorted[idx:] / qn).astype(float)))
 
         # Return results
         return {'ks': ks, 'gammas': gammas[~np.isnan(gammas)]}
