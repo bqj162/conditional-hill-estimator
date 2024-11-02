@@ -31,9 +31,6 @@ def parse_command_line_arguments(argv : list[str]):
     user_input = UserInput(stock_tickers=stock_tickers, from_date=args.from_date, to_date=args.to_date, transform_type=transform_type, time_series=time_series)
     return user_input
 
-
-
-
 def parse_transform_type(transform_type):
     if transform_type not in valid_transform_types:
         raise Exception(f"Not a valid transform_type, please use: {[transform_type for transform_type in valid_transform_types]}")
@@ -44,7 +41,3 @@ def parse_time_series_file(filename):
     time_series_df = pd.read_csv(filename)
     time_series = TimeSeries(time=time_series_df.values[:,0], covariate_name= time_series_df.keys()[1], covariate=time_series_df.values[:,1], rv_name = time_series_df.keys()[2], rv=time_series_df.values[:,2])
     return time_series
-
-
-def convert_prices_to_time_series(prices):
-    pass

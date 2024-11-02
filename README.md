@@ -31,24 +31,46 @@ The file Plot.py implements three kinds of plots. 1) Plotting the given time ser
 ### Inputs:
 The program takes *either* a time series csv file, *or* specified stock tickers:
 
--s --stocks: string of two stock tickers, e.g. "AAPL,MSFT"
+- -s --stocks: string of two stock tickers, e.g. "AAPL,MSFT"
 
--fd --from_date: date from which to download stock price history, e.g. "2000-01-01"
+- -fd --from_date: date from which to download stock price history, e.g. "2000-01-01"
 
--td --to_date: date to which to download stock price history, e.g. "2024-11-01"
+- -td --to_date: date to which to download stock price history, e.g. "2024-11-01"
 
--t --transform_type: applies specified transformation to timeseries. Current options: log_diff
+- -t --transform_type: applies specified transformation to timeseries. Current options: log_diff
 
--f --file_path: location of time series csv file with 3 columns: time, covariate, rv.
+- -f --file_path: location of time series csv file with 3 columns: time, covariate, rv.
 
 ### Outputs:
-Output.html file
+- Output.html file
 
 ### Examples:
-python3 conditional_hill_estimator.py -s "AAPL,MSFT" -fd "2000-01-01" -td "2024-11-01" -t log_diff
+- python3 conditional_hill_estimator.py -s "AAPL,MSFT" -fd "2000-01-01" -td "2024-11-01" -t log_diff
 
-python3 conditional_hill_estimator.py -s "TSLA,NVDA" -t log_diff
+- python3 conditional_hill_estimator.py -s "TSLA,NVDA" -t log_diff
 
-python3 conditional_hill_estimator.py -f "time_series.csv" -t log_diff
+- python3 conditional_hill_estimator.py -f "time_series.csv" -t log_diff
 
-python3 conditional_hill_estimator.py -f "time_series.csv"
+- python3 conditional_hill_estimator.py -f "time_series.csv"
+
+## Classes:
+- conditional_hill_estimator.py: 
+main script that calls all relevant scripts to save and produce the desired html file
+
+- HillEstimator.py
+This file takes a time series as input. The function estimate() calls the function gamma_full() to provide the values of the conditional Hill Estimator for each pair of x and k_n values.
+The function gamma_full() takes a covariate process and a conditionally regularly varying process and produces the values of the conditional Hill Estimator. The output is a list of $x$’s, $k_n$’s and $\gamma_{k_n}(x)$.
+The function gamma_automatic() calculates the conditional hill estimate for a given covariate process and a conditionally regularly varying process and one given value of $x$.
+
+- HTML.py takes a list of plots as input, from which is both saves the html of with plots and displays them
+
+- parser.py parses the command line inputs and formats accordingly. 
+
+- Plots.py is responsible for producing both marginal time series plots and plotting the Conditional Hill Estimator
+
+- StockTicker.py is a tiny wrapper around yfinance
+
+- TimeSeries.py is a representation of time series including methods to transform and split
+
+- UserInput.py loads and prepares user input for conditional hill estimation and plotting.
+
