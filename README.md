@@ -1,5 +1,5 @@
 # Conditional Hill Estimator
-#### Video Demo:  <URL HERE>
+#### Video Demo:  https://youtu.be/UQbEDHsfRxk
 #### Description: 
 The Hill estimator presented by Hill (1975) estimates the tail index for regularly varying sequence of random variables. Common goals of such estimator is to establish asymptotic properties such as consistency and asymptotic normality, which have been studied in the case of the Hill estimator for both iid, mixing sequences and networks. 
 In this project, the task of analyzing extremal events for mixing regularly varying time series in the presence of random covariates is considered. 
