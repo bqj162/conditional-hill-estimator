@@ -21,6 +21,6 @@ class UserInput:
         prices = []
         for stock_ticker in self.stock_tickers:
             price = StockTicker(stock_ticker, start=self.from_date, end=self.to_date).get_prices()
-            prices.append(price.Open)
+            prices.append(price.Close)
         prices = prices[0].join(prices[1], how="inner")
-        self.time_series = TimeSeries(time=prices.index.values, covariate=prices.values[:,0], rv=prices.values[:,1])
+        self.time_series = TimeSeries(time=prices.index.values, covariate_name=self.stock_tickers[0],  covariate=prices.values[:,0], rv_name = self.stock_tickers[1], rv=prices.values[:,1])

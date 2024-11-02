@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import norm, rankdata
 from scipy.stats import gaussian_kde
+from KDEpy import FFTKDE
 
 
 class HillEstimator:
@@ -10,17 +11,15 @@ class HillEstimator:
         self.hill_estimate = None
 
     def estimate(self):
-        X = self.time_series.covariate
-        Y = self.time_series.rv
-        self.hill_estimate = self.gamma_full(X = X, Y = Y)
+        self.hill_estimate = self.gamma_full(X =  self.time_series.covariate, Y = self.time_series.rv)
         return self.hill_estimate
 
 
     def gamma_full(self, X, Y):
-        x_vals = np.linspace(0.03, 0.97, num = self.grid_resolution)
+        x_vals = np.linspace(0.00, 1, num = self.grid_resolution)
         results = np.full((self.grid_resolution, self.grid_resolution), np.nan)
 
-        for i in range(len(x_vals)):
+        for i in range(self.grid_resolution):
             fit = self.gamma_automatic(x_vals[i], X, Y)
             results[i,] = fit['gammas']
 
@@ -31,8 +30,9 @@ class HillEstimator:
         n_x = len(X)
         x_ranked = rankdata(X) / (n_x + 1)
 
-        kde = gaussian_kde(x_ranked, bw_method='scott')
-        h = kde.factor ** 2
+        #kde = gaussian_kde(x_ranked, bw_method='scott')
+        kde = FFTKDE(bw='ISJ').fit(x_ranked)
+        h = kde.bw / 2
         w = norm.pdf(x - x_ranked, scale=np.sqrt(h))
 
         sort_idx = np.argsort(Y)
