@@ -27,3 +27,5 @@ class Plots:
                           yaxis_title_text='x',
                           zaxis_title_text='gamma_k_x')
         return fig
+
+    
