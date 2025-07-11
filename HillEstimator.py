@@ -5,12 +5,16 @@ from KDEpy import FFTKDE
 
 
 class HillEstimator:
-    def __init__(self, time_series, grid_resolution = 200):
+    def __init__(self, time_series, grid_resolution: int = 200):
         self.time_series = time_series
-        self.grid_resolution = min(grid_resolution, len(time_series.covariate))
+        self.grid_resolution = grid_resolution
         self.hill_estimate = None
 
     def estimate(self):
+        if (self.time_series.covariate is not None):
+            if len(self.time_series.covariate) < self.grid_resolution:
+                raise Exception ('Covariate sequence is shorter that grid resolution')
+            
         self.hill_estimate = self.gamma_full(X =  self.time_series.covariate, Y = self.time_series.rv)
         return self.hill_estimate
     
@@ -56,7 +60,7 @@ class HillEstimator:
         n_x = len(X)
         x_ranked = rankdata(X) / (n_x + 1)
         kde = FFTKDE(bw='ISJ').fit(x_ranked)
-        h = kde.bw / 2
+        h = kde.bw**2 # /2
         sort_idx = np.argsort(Y)
         y_sorted = Y[sort_idx]
         x_sorted = x_ranked[sort_idx]
@@ -65,6 +69,7 @@ class HillEstimator:
         x_eval = rank_of_x / (n_x + 1)
 
         K_X = norm.pdf(x_eval - x_sorted, scale = np.sqrt(h))
+        # K_X = norm.pdf(x_eval - x_sorted, scale = h)
         W = K_X/sum(K_X)
         s = 1 - np.cumsum(W)
         idx = np.min(np.where(s < k_n / n_x))
@@ -74,17 +79,33 @@ class HillEstimator:
 
         return gamma
 
+    def unconditional_hill_estimator(self, Y , k_n):
+        Y_sorted = np.sort(Y)
+        n = len(Y_sorted)
+        #    (since Y_sorted[n-1] is the maximum)
+        threshold = Y_sorted[n - k_n - 1]
 
-# if __name__ == "__main__":
-#     def gamma(s):
-#         return 0.3 + 0.2 * norm.pdf(s, loc = 0.2, scale = 0.05)
+        # 3) the top k values are X_(n-k+1) … X_(n) = Y_sorted[n-k : n]
+        tail = Y_sorted[n - k_n : ]
+
+        # 4) Hill γ̂ = mean( ln(tail / threshold) )
+        gamma = np.mean(np.log(tail / threshold))
+
+        return gamma
+
+if __name__ == "__main__":
+    def gamma(s):
+        return 0.3 + 0.2 * norm.pdf(s, loc = 0.2, scale = 0.05)
     
-#     rng = np.random.default_rng(1)
-#     n = 1000
-#     U_unif = rng.uniform(size = n)
-#     X_unif = rng.uniform(size = n)
-#     Y_sim = (1-U_unif)**(-gamma(X_unif))
-#     k = n / 10
-#     Hill = HillEstimator()
-#     values = HillEstimator.gamma_fixed_k_n(X = X_unif, Y = Y_sim, k_n = k)
-#     print(values)
+    rng = np.random.default_rng(1)
+    n = 1000
+    U_unif = rng.uniform(size = n)
+    X_unif = rng.uniform(size = n)
+    # Y_sim = (1-U_unif)**(-gamma(X_unif))
+    Y_sim = (1-U_unif)**(-2)
+    k = n / 10
+
+    Hill = HillEstimator(time_series=Y_sim)
+    # values = HillEstimator.gamma_fixed_k_n(X = X_unif, Y = Y_sim, k_n = k)
+    est = Hill.unconditional_hill_estimator(k_n = int(k))
+    print(est)

@@ -8,7 +8,8 @@ import pandas as pd
 from ResidualSeries import ResidualSeries
 from TimeSeries import TimeSeries
 from quantile_estimator import quantileSeries
-import plotly as plt
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
 def main():
         user_input = parse_command_line_arguments(sys.argv, split=True)
@@ -28,10 +29,21 @@ if __name__ == "__main__":
         neg_log_returns = user_input.time_series
         q_series = quantileSeries(q = 0.95, 
                                   time_series = neg_log_returns,
-                                  fitting_window= 500)
+                                  fitting_window= 1000)
 
         fit = q_series.estimate()
-        print(fit)
+
+        print(fit) 
+        fig, ax = plt.subplots()
+        ax.bar(fit.index,   fit['obs'],   width=1, label='obs')
+        # ax.plot(fit.index,  fit['x_hat'], linestyle=':', linewidth=2, label='x_hat')
+        ax.scatter(fit.index,  fit['x_hat'], s = 0.25 ,label='x_hat')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Value')
+        ax.legend()
+        plt.xticks(rotation=30)
+        plt.tight_layout()
+        plt.show()
         
         # main()
 

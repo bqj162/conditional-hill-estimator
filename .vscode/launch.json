@@ -12,9 +12,9 @@
             "program": "${workspaceFolder}/conditional_hill_estimator.py",
             "console": "integratedTerminal",
             "args": [
-            "-s", "^GSPC,^GSPC",
-            "-fd", "2015-06-05",
-            "-td", "2025-06-15",
+            "-s", "^GSPC,^GSPC", // "^GDAXI,^GDAXI", // "^GSPC,^GSPC", //
+            "-fd", "1985-01-01", // "2020-06-05",
+            "-td", "1992-01-01", // "2025-06-15",
             "-t", "log_diff",
             "-l", "0"
             ]

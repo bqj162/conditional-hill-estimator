@@ -24,7 +24,7 @@ class quantileSeries:
             raise Exception("Fitting window must be smaller than length of time series")
         results = []
         for i in range(fitting_window, n-1):
-            ts_slice = time_series.time[ i - fitting_window : i ]
+            ts_slice = time_series.time[ i - fitting_window : i ] 
             vals_slice = time_series.rv[ i - fitting_window : i ]
             window_series = TimeSeries(time=ts_slice, rv=vals_slice, rv_name=time_series.rv_name)
 
@@ -77,10 +77,13 @@ class quantileSeries:
                                        k_n = int(k_n), 
                                        x = z_t)
         
+        # gamma_unc = Hill.unconditional_hill_estimator(Y = Hill.time_series.rv, k_n=k_n)
+
         gains_sorted = np.sort(pos_ts.rv)
         order_stat = gains_sorted[-(k_n + 1)]
-        z_hat = order_stat*((1-self.q)/(k_n*n))**(-gamma)
-        x_hat = fitting.forecast_mu + np.sqrt(fitting.forecast_sigma2) * z_hat
-        return {'date' : fitting.forecast_date, 'x_hat': x_hat}
+        z_hat = order_stat*((1-self.q)/(k_n/n))**(-gamma)
+        # z_hat = order_stat*((1-self.q)/(k_n/n))**(-gamma_unc)
+        x_hat = fitting.forecast_mu + fitting.forecast_sigma * z_hat
+        return {'date' : fitting.forecast_date, 'x_hat': x_hat, 'obs': None}
 
 

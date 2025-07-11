@@ -6,12 +6,13 @@ from typing import NamedTuple
 from dataclasses import dataclass
 from TimeSeries import TimeSeries
 import numpy as np
+import matplotlib.pyplot as plt 
 
 class Forecast(NamedTuple):
     residual_ts: TimeSeries
     forecast_date: pd.Timestamp
     forecast_mu: float
-    forecast_sigma2: float
+    forecast_sigma: float
 
 @dataclass
 class AR1GARCG11:
@@ -26,37 +27,13 @@ class AR1GARCG11:
     @classmethod
     def fit(cls, returns: pd.Series, name: str="resid") -> "AR1GARCG11":
 
-        # am = arch_model(returns, mean="AR",lags=1,vol="GARCH", p=1, q=1, rescale=False)
-        # res = am.fit(disp="off")
-        # params = res.params
-
-        # ar_keys = [
-        #     k for k in params.index
-        #     if k.endswith("[1]")
-        #        and not k.startswith("alpha")
-        #        and not k.startswith("beta")
-        # ]
-        # if len(ar_keys) != 1:
-        #     raise ValueError(f"Could not uniquely identify AR(1) param among {params.index.tolist()}")
-        # ar_key = ar_keys[0]
-        # phi    = float(params[ar_key])
-
-        # alpha_0 = float(params["omega"])
-        # alpha_1 = float(params["alpha[1]"])
-        # beta    = float(params["beta[1]"])
-
-        # Step 1: OLS estimate of phi with no intercept
         x_t = returns.values
         x_tm1 = returns.shift(1).dropna().values
         x_t = returns.iloc[1:].values  # align lengths
-        # phi = sum(x_{t} * x_{t-1}) / sum(x_{t-1}^2)
         phi = float(np.dot(x_t, x_tm1) / np.dot(x_tm1, x_tm1))
-
-        # Compute residuals (eps) for GARCH fit
         eps = returns.iloc[1:] - phi * returns.shift(1).dropna()
         eps.index = returns.index[1:]
 
-        # Step 2: GARCH(1,1) with zero mean
         am = arch_model(
             eps,
             mean="Zero",
@@ -91,27 +68,35 @@ class AR1GARCG11:
     
     def forecast_1(self):
         f = self.fitted_model.forecast(horizon=1, reindex=False)
-        mu_1 = f.mean.iloc[-1, 0] 
+        
         var1 = f.variance.iloc[-1,0] 
-
         orig_ts = self.returns
+
+        mu_1 = self.phi * orig_ts.values[-1]
+
         dates = orig_ts.index
-        resid = self.fitted_model.resid.dropna() / self.fitted_model.conditional_volatility
-        cov_values = resid.values[:-1]
-        rv_values = resid.values[1:]
-        time_idx   = resid.index         # corresponds to residuals at t = 2,…,n
+        std_resid = self.fitted_model.std_resid.dropna()
+        cov_values = std_resid.values[:-1]
+        rv_values = std_resid.values[1:]
+        time_idx   = std_resid.index         # corresponds to residuals at t = 2,…,n
         time_vals  = time_idx[1:] 
           
         ts = TimeSeries(
             time= time_vals,
-            covariate_name = self.series_name,
+            covariate_name = self.series_name + "_lag1",
             covariate=cov_values,
-            rv_name=self.series_name + "_lag1",
+            rv_name=self.series_name ,
             rv= rv_values
         )
 
         last_date = dates[-1]
         next_date = pd.to_datetime(last_date) + pd.tseries.offsets.BDay(1)
+
+        # plt.plot(self.returns.index[1:], self.fitted_model.conditional_volatility)
+        # plt.title("Fitted Conditional SD")
+        # plt.xlabel("Date")
+        # plt.ylabel("Vol")
+        # plt.show()   
         
-        return Forecast(residual_ts= ts, forecast_date = next_date, forecast_mu=mu_1, forecast_sigma2=var1)
+        return Forecast(residual_ts= ts, forecast_date = next_date, forecast_mu=mu_1, forecast_sigma=np.sqrt(var1))
     
