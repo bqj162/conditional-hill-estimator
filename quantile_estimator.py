@@ -5,6 +5,7 @@ import numpy as np
 from ResidualSeries import ResidualSeries
 from TimeSeries import TimeSeries
 import matplotlib.pyplot as plt 
+from scipy.stats import genpareto
 
 class quantileSeries:
     def __init__(self, time_series, q, fitting_window):
@@ -31,7 +32,7 @@ class quantileSeries:
             quantiles = self.quantile_at_t(window_series)
             quantiles['obs'] = time_series.rv[i+1]
             results.append(quantiles)
-        out = pd.DataFrame(results , columns=['date','x_hat','obs'])
+        out = pd.DataFrame(results , columns=['date','x_hat', 'x_hat_unc', 'obs'])
         out.set_index('date', inplace=True)
         return out
         
@@ -47,18 +48,6 @@ class quantileSeries:
         pos_time      = ts.time[mask]
         pos_covariate = ts.covariate[mask]
         pos_rv        = ts.rv[mask]
-        
-        if len(pos_rv) <= 2:
-            time_index = pd.to_datetime(time_series.time)
-            series = pd.Series(data=time_series.rv, index=time_index)
-            series.plot()
-            plt.plot(ts.time, ts.rv)
-            plt.title("Residuals over time")
-            plt.xlabel("Date")
-            plt.ylabel("Residual")
-            plt.show()   
-            raise Exception("Length of positive residuals less equal 2")
-
 
         pos_ts = TimeSeries(
             time           = pos_time,
@@ -67,23 +56,44 @@ class quantileSeries:
             rv_name        = ts.rv_name,
             rv             = pos_rv
         )
-        # z_t = pos_rv[-1]
-        z_t = ts.rv[-1]
+        z_t = pos_rv[-1] 
+        # z_t = ts.rv[-1]
         Hill = HillEstimator(pos_ts)
         n = len(Hill.time_series.rv)
-        k_n = int(np.floor(n/10)) 
+        k_n = int(np.floor(n/20)) 
+        # k_n = int(np.floor(np.sqrt(n)))
         gamma = Hill.gamma_fixed_k_n_x(X = Hill.time_series.covariate,
                                        Y = Hill.time_series.rv, 
                                        k_n = int(k_n), 
                                        x = z_t)
         
-        # gamma_unc = Hill.unconditional_hill_estimator(Y = Hill.time_series.rv, k_n=k_n)
+        gamma_unc = Hill.unconditional_hill_estimator(Y = Hill.time_series.rv, k_n=k_n)
 
         gains_sorted = np.sort(pos_ts.rv)
-        order_stat = gains_sorted[-(k_n + 1)]
-        z_hat = order_stat*((1-self.q)/(k_n/n))**(-gamma)
-        # z_hat = order_stat*((1-self.q)/(k_n/n))**(-gamma_unc)
-        x_hat = fitting.forecast_mu + fitting.forecast_sigma * z_hat
-        return {'date' : fitting.forecast_date, 'x_hat': x_hat, 'obs': None}
+        order_stat   = gains_sorted[-(k_n + 1)]
+
+        # exceendances = gains_sorted[-k_n:] - order_stat
+        # c_hat, loc_hat, scale_hat = genpareto.fit(exceendances, floc=0)
+        # xi_hat    = c_hat        
+        # beta_hat  = scale_hat
+        # z_hat_gpd = order_stat + (beta_hat/xi_hat) * (((1 - self.q)/(k_n/n))**(-xi_hat) - 1)
 
 
+        z_hat     = order_stat*((1-self.q)/(k_n/n))**(-gamma)
+        z_hat_unc = order_stat*((1-self.q)/(k_n/n))**(-gamma_unc)
+
+        x_hat     = fitting.forecast_mu + fitting.forecast_sigma * z_hat # z_hat_gpd # z_hat #z_hat_gpd #z_hat
+        x_hat_unc = fitting.forecast_mu + fitting.forecast_sigma * z_hat_unc
+        return {'date' : fitting.forecast_date, 'x_hat': x_hat, 'x_hat_unc':x_hat_unc, 'obs': None}
+
+
+ # if len(pos_rv) <= 2:
+        #     time_index = pd.to_datetime(time_series.time)
+        #     series = pd.Series(data=time_series.rv, index=time_index)
+        #     series.plot()
+        #     plt.plot(ts.time, ts.rv)
+        #     plt.title("Residuals over time")
+        #     plt.xlabel("Date")
+        #     plt.ylabel("Residual")
+        #     plt.show()   
+        #     raise Exception("Length of positive residuals less equal 2")

@@ -60,7 +60,7 @@ class HillEstimator:
         n_x = len(X)
         x_ranked = rankdata(X) / (n_x + 1)
         kde = FFTKDE(bw='ISJ').fit(x_ranked)
-        h = kde.bw**2 # /2
+        h =  kde.bw**2 # /2
         sort_idx = np.argsort(Y)
         y_sorted = Y[sort_idx]
         x_sorted = x_ranked[sort_idx]
@@ -69,7 +69,7 @@ class HillEstimator:
         x_eval = rank_of_x / (n_x + 1)
 
         K_X = norm.pdf(x_eval - x_sorted, scale = np.sqrt(h))
-        # K_X = norm.pdf(x_eval - x_sorted, scale = h)
+        # K_X = norm.pdf(x_eval - x_sorted, scale = 0.05)
         W = K_X/sum(K_X)
         s = 1 - np.cumsum(W)
         idx = np.min(np.where(s < k_n / n_x))
@@ -82,13 +82,9 @@ class HillEstimator:
     def unconditional_hill_estimator(self, Y , k_n):
         Y_sorted = np.sort(Y)
         n = len(Y_sorted)
-        #    (since Y_sorted[n-1] is the maximum)
+    
         threshold = Y_sorted[n - k_n - 1]
-
-        # 3) the top k values are X_(n-k+1) … X_(n) = Y_sorted[n-k : n]
         tail = Y_sorted[n - k_n : ]
-
-        # 4) Hill γ̂ = mean( ln(tail / threshold) )
         gamma = np.mean(np.log(tail / threshold))
 
         return gamma
