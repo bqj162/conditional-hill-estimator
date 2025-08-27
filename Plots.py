@@ -1,18 +1,19 @@
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 
 
 class Plots:
-    def __init__(self, time_series, hill_estimate):
+    def __init__(self, time_series = None, hill_estimate = None, quantile_fit = None, q = None):
         self.time_series = time_series
         self.hill_estimate = hill_estimate
+        self.quantile_fit = quantile_fit
+        self.q = q  
 
-
-    def plot_2d(self):
+    def plot_2d_marginal(self):
         dates = self.time_series.time
         x = self.time_series.covariate
         y = self.time_series.rv
-        #positive_indicies = [y > 0]
 
         ts_plot = make_subplots(rows=2, cols=1, subplot_titles=("Covariate process: " + self.time_series.covariate_name, "Regularly varying process: " + self.time_series.rv_name))
         ts_plot.add_trace(go.Scatter(x = dates, y = x, showlegend=False), row=1, col=1)
@@ -28,4 +29,17 @@ class Plots:
                           zaxis_title_text='gamma_k_x')
         return fig
 
-    
+    def plot_fit(self):
+        fig, ax = plt.subplots()
+        ax.bar(self.quantile_fit.index,   self.quantile_fit['obs'], width=2.5, label='obs')
+        # ax.plot(fit.index, fit['x_hat']    , label='Conditional'  , linewidth=0.5, linestyle='dashed', color='red')
+        # ax.plot(fit.index, fit['x_hat_unc'], label='Unconditional', linewidth=0.5, linestyle ='dashdot', color='green')      
+        ax.scatter(self.quantile_fit.index,  self.quantile_fit['x_hat'],     s = 0.25 ,label='Conditional')
+        ax.scatter(self.quantile_fit.index,  self.quantile_fit['x_hat_unc'], s = 0.25 ,label='Unconditional')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Value')
+        ax.legend()
+        plt.xticks(rotation=30)
+        plt.tight_layout()
+        plt.savefig(f"Forecast_quantiles_q_{self.q}_{self.time_series.rv_name}.pdf")
+        plt.show()

@@ -33,7 +33,7 @@ class TimeSeries:
         if self.covariate is not None:
             self.covariate = np.diff(np.log(self.covariate.astype(float)))
         log_rv = np.log(self.rv.astype(float))    
-        self.rv = np.diff(np.squeeze(log_rv)) #Fix bug here
+        self.rv = np.diff(np.squeeze(log_rv)) 
         self.time = self.time[1:]
 
 
