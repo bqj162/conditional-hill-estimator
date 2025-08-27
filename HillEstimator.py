@@ -68,7 +68,8 @@ class HillEstimator:
         rank_of_x = np.sum(X <= x) + 1  
         x_eval = rank_of_x / (n_x + 1)
 
-        K_X = norm.pdf(x_eval - x_sorted, scale = np.sqrt(h))
+        # K_X = norm.pdf(x_eval - x_sorted, scale = np.sqrt(h))
+        K_X = norm.pdf(x_eval - x_sorted, scale = np.sqrt(k_n/n_x))
         # K_X = norm.pdf(x_eval - x_sorted, scale = 0.05)
         W = K_X/sum(K_X)
         s = 1 - np.cumsum(W)

@@ -17,7 +17,6 @@ class UserInput:
         if self.time_series is None:
             self.generate_time_series_from_stock_tickers(split = self.split)
         self.time_series.transform(transform_type = self.transform_type)
-        # two_stocks = (len([self.stock_tickers]) == 2)
         self.time_series = self.time_series.split(split=self.split)
 
     def generate_time_series_from_stock_tickers(self, split):

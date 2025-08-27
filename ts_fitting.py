@@ -29,7 +29,7 @@ class AR1GARCG11:
 
         x_t = returns.values
         x_tm1 = returns.shift(1).dropna().values
-        x_t = returns.iloc[1:].values  # align lengths
+        x_t = returns.iloc[1:].values 
         phi = float(np.dot(x_t, x_tm1) / np.dot(x_tm1, x_tm1))
         eps = returns.iloc[1:] - phi * returns.shift(1).dropna()
         eps.index = returns.index[1:]
@@ -47,7 +47,6 @@ class AR1GARCG11:
                 warnings.filterwarnings("error", category=ConvergenceWarning)
                 res = am.fit(disp="off")
         except ConvergenceWarning:
-            # Retry with Powell method if SLSQP constraints fail
             res = am.fit(disp="off", method="powell")
         params = res.params
 
@@ -90,13 +89,7 @@ class AR1GARCG11:
         )
 
         last_date = dates[-1]
-        next_date = pd.to_datetime(last_date) + pd.tseries.offsets.BDay(1)
-
-        # plt.plot(self.returns.index[1:], self.fitted_model.conditional_volatility)
-        # plt.title("Fitted Conditional SD")
-        # plt.xlabel("Date")
-        # plt.ylabel("Vol")
-        # plt.show()   
+        next_date = pd.to_datetime(last_date) + pd.tseries.offsets.BDay(1)  
         
         return Forecast(residual_ts= ts, forecast_date = next_date, forecast_mu=mu_1, forecast_sigma=np.sqrt(var1))
     

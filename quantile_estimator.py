@@ -5,7 +5,7 @@ import numpy as np
 from ResidualSeries import ResidualSeries
 from TimeSeries import TimeSeries
 import matplotlib.pyplot as plt 
-from scipy.stats import genpareto
+import scipy
 
 class quantileSeries:
     def __init__(self, time_series, q, fitting_window):
@@ -14,6 +14,29 @@ class quantileSeries:
         self.fitting_window = fitting_window
         self.quantile_series = None
 
+    def back_test(self):
+        results = []
+        fit = self.estimate()
+        for q in self.q:
+            fit_q       = fit[fit["q"] == q]
+            fit_pos     = fit_q[fit_q['obs'] > 0]
+            test_length = len(fit_pos['obs'])
+            expected_exceedances = int((1-q) * test_length)
+            num_exceedances     = (fit_pos['x_hat']     < fit_pos['obs']).sum()
+            num_exceedances_unc = (fit_pos['x_hat_unc'] < fit_pos['obs']).sum()
+            b_test     = scipy.stats.binomtest(num_exceedances    , n=test_length, p= 1 - q, alternative='two-sided')
+            b_test_unc = scipy.stats.binomtest(num_exceedances_unc, n=test_length, p= 1 - q, alternative='two-sided')
+            frame = pd.DataFrame({
+                "name": [self.time_series.rv_name],"len": [test_length],"q": [q],
+                "Expected": [expected_exceedances],
+                "Conditional": [num_exceedances]  ,    "p_Conditional": [b_test.pvalue],
+                "Unconditional": [num_exceedances_unc],"p_Unconditional": [b_test_unc.pvalue]
+            })
+            results.append(frame)
+        out = pd.concat(results, ignore_index=True)
+        return out
+
+           
     def estimate(self):
         self.quantile_series = self.quantile_all_dates(time_series=self.time_series, 
                                                        fitting_window=self.fitting_window)
@@ -30,9 +53,9 @@ class quantileSeries:
             window_series = TimeSeries(time=ts_slice, rv=vals_slice, rv_name=time_series.rv_name)
 
             quantiles = self.quantile_at_t(window_series)
-            quantiles['obs'] = time_series.rv[i+1]
+            quantiles["obs"] = time_series.rv[i+1]
             results.append(quantiles)
-        out = pd.DataFrame(results , columns=['date','x_hat', 'x_hat_unc', 'obs'])
+        out = pd.concat(results, ignore_index=True)
         out.set_index('date', inplace=True)
         return out
         
@@ -57,43 +80,35 @@ class quantileSeries:
             rv             = pos_rv
         )
         z_t = pos_rv[-1] 
-        # z_t = ts.rv[-1]
         Hill = HillEstimator(pos_ts)
         n = len(Hill.time_series.rv)
-        k_n = int(np.floor(n/20)) 
+        # k_n = int(np.floor(n/10)) 
+        # k_n = int(np.floor(n/20)) 
         # k_n = int(np.floor(np.sqrt(n)))
+        # k_n = int(np.floor(n**(3/5)))
+        k_n = int(np.floor(n**(2/3)))
+        # k_n = int(np.floor(n**(3/4)))
+        # k_n = int(np.floor(n**(4/5)))
         gamma = Hill.gamma_fixed_k_n_x(X = Hill.time_series.covariate,
                                        Y = Hill.time_series.rv, 
                                        k_n = int(k_n), 
                                        x = z_t)
         
         gamma_unc = Hill.unconditional_hill_estimator(Y = Hill.time_series.rv, k_n=k_n)
-
         gains_sorted = np.sort(pos_ts.rv)
         order_stat   = gains_sorted[-(k_n + 1)]
+        
+        # exceendances              = gains_sorted[-k_n:] - order_stat
+        # c_hat, loc_hat, scale_hat = genpareto.fit(exceendances, floc=0)    
+        # z_hat_gpd                 = order_stat + (scale_hat/c_hat) * (((1 - self.q)/(k_n/n))**(-c_hat) - 1)
 
-        # exceendances = gains_sorted[-k_n:] - order_stat
-        # c_hat, loc_hat, scale_hat = genpareto.fit(exceendances, floc=0)
-        # xi_hat    = c_hat        
-        # beta_hat  = scale_hat
-        # z_hat_gpd = order_stat + (beta_hat/xi_hat) * (((1 - self.q)/(k_n/n))**(-xi_hat) - 1)
-
-
-        z_hat     = order_stat*((1-self.q)/(k_n/n))**(-gamma)
-        z_hat_unc = order_stat*((1-self.q)/(k_n/n))**(-gamma_unc)
-
-        x_hat     = fitting.forecast_mu + fitting.forecast_sigma * z_hat # z_hat_gpd # z_hat #z_hat_gpd #z_hat
-        x_hat_unc = fitting.forecast_mu + fitting.forecast_sigma * z_hat_unc
-        return {'date' : fitting.forecast_date, 'x_hat': x_hat, 'x_hat_unc':x_hat_unc, 'obs': None}
-
-
- # if len(pos_rv) <= 2:
-        #     time_index = pd.to_datetime(time_series.time)
-        #     series = pd.Series(data=time_series.rv, index=time_index)
-        #     series.plot()
-        #     plt.plot(ts.time, ts.rv)
-        #     plt.title("Residuals over time")
-        #     plt.xlabel("Date")
-        #     plt.ylabel("Residual")
-        #     plt.show()   
-        #     raise Exception("Length of positive residuals less equal 2")
+        out = pd.DataFrame({
+            "date": [fitting.forecast_date for q in self.q],
+            "q": self.q,
+            "x_hat": [fitting.forecast_mu + fitting.forecast_sigma *
+                    order_stat*((1-q)/(k_n/n))**(-gamma) for q in self.q],
+            "x_hat_unc": [fitting.forecast_mu + fitting.forecast_sigma *
+                        order_stat*((1-q)/(k_n/n))**(-gamma_unc) for q in self.q],
+            "obs": None
+        })
+        return out
