@@ -9,34 +9,29 @@ def simulate_chain(
     burn_in: int = 0,
     rng: Optional[np.random.Generator] = None,
 ) -> np.ndarray:
-    """
-    Simulate a single Markov chain X_j = U_j^{-1/alpha(X_{j-1})} for n steps.
-    - alpha: function alpha(x) -> positive float
-    - n: number of returned samples
-    - X0: initial state (if you have invariant dist sample, pass it)
-    - burn_in: number of burn-in steps before collecting samples
-    - rng: optional np.random.Generator
-    """
     if rng is None:
         rng = np.random.default_rng()
 
     x = float(X0)
 
-    for _ in range(burn_in):
-        u = float(rng.random())
-        x = math.exp(-math.log(u) / float(alpha(x)))
-
-    out = np.empty(n, dtype=float)
+    results = np.empty([n, burn_in])
     for i in range(n):
-        u = float(rng.random())
-        x = math.exp(-math.log(u) / float(alpha(x)))
-        out[i] = x
+        x = float(X0)
+        for j in range(burn_in):
+            u = float(rng.random())
+            x = math.exp(-math.log(u) / float(alpha(x)))
+            results[i,j] = x
 
-    return out
+    if n == 1:
+        return results[0]
+    return results
+
+    
 
 
 if __name__ == "__main__":
     def alpha(x): return 1 + abs(x)
-    samples = simulate_chain(alpha, n=10000, X0=1.0, burn_in=1000)
+    samples = simulate_chain(alpha, n=10, X0=1.0, burn_in=5)
+    print(samples)
     print(f"Mean: {np.mean(samples)}, Std: {np.std(samples)}")
 

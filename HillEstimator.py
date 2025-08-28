@@ -56,7 +56,7 @@ class HillEstimator:
         return {'ks': ks, 'gammas': gammas[~np.isnan(gammas)]}
 
 
-    def gamma_fixed_k_n_x(self, X, Y, k_n, x):
+    def gamma_fixed_k_n_x(X, Y, k_n, x):
         n_x = len(X)
         x_ranked = rankdata(X) / (n_x + 1)
         kde = FFTKDE(bw='ISJ').fit(x_ranked)
@@ -70,7 +70,6 @@ class HillEstimator:
 
         # K_X = norm.pdf(x_eval - x_sorted, scale = np.sqrt(h))
         K_X = norm.pdf(x_eval - x_sorted, scale = np.sqrt(k_n/n_x))
-        # K_X = norm.pdf(x_eval - x_sorted, scale = 0.05)
         W = K_X/sum(K_X)
         s = 1 - np.cumsum(W)
         idx = np.min(np.where(s < k_n / n_x))
@@ -80,7 +79,7 @@ class HillEstimator:
 
         return gamma
 
-    def unconditional_hill_estimator(self, Y , k_n):
+    def unconditional_hill_estimator(Y , k_n):
         Y_sorted = np.sort(Y)
         n = len(Y_sorted)
     

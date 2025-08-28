@@ -43,3 +43,14 @@ class Plots:
         plt.tight_layout()
         plt.savefig(f"Forecast_quantiles_q_{self.q}_{self.time_series.rv_name}.pdf")
         plt.show()
+
+    def plot_bias_MSE(bias_MSE_df):
+        k = bias_MSE_df['k']
+        lw = 1
+        fig, (ax1, ax2) = plt.subplots(1,2)
+        ax1.plot(k, bias_MSE_df['bias']  , label = 'Unconditional',linewidth=lw, linestyle='dashed', color='red')
+        ax1.plot(k, bias_MSE_df['bias_t'], label = 'Conditional'  ,linewidth=lw, linestyle ='dashdot', color='green')
+        ax2.plot(k, bias_MSE_df['MSE']   , label = 'Unconditional',linewidth=lw, linestyle='dashed', color='red')
+        ax2.plot(k, bias_MSE_df['MSE_t'] , label = 'Conditional'  ,linewidth=lw, linestyle ='dashdot', color='green')
+        plt.tight_layout()
+        plt.show()
