@@ -53,9 +53,8 @@ class quantileSeries:
             rv_name        = ts.rv_name,
             rv             = pos_rv
         )
-        z_t = pos_rv[-1] 
-        Hill = HillEstimator(pos_ts)
-        n = len(Hill.time_series.rv)
+        z_t = pos_rv[-1]
+        n = len(pos_ts.rv)
         # k_n = int(np.floor(n/10)) 
         # k_n = int(np.floor(n/20)) 
         # k_n = int(np.floor(np.sqrt(n)))
@@ -63,12 +62,16 @@ class quantileSeries:
         k_n = int(np.floor(n**(2/3)))
         # k_n = int(np.floor(n**(3/4)))
         # k_n = int(np.floor(n**(4/5)))
-        gamma = Hill.gamma_fixed_k_n_x(X = Hill.time_series.covariate,
-                                       Y = Hill.time_series.rv, 
+        # gamma = Hill.gamma_fixed_k_n_x(X = Hill.time_series.covariate,
+        #                                Y = Hill.time_series.rv, 
+        #                                k_n = int(k_n), 
+        #                                x = z_t)
+        gamma = HillEstimator.gamma_fixed_k_n_x(X = pos_ts.covariate,
+                                       Y = pos_ts.rv, 
                                        k_n = int(k_n), 
                                        x = z_t)
         
-        gamma_unc = Hill.unconditional_hill_estimator(Y = Hill.time_series.rv, k_n=k_n)
+        gamma_unc = HillEstimator.unconditional_hill_estimator(Y = pos_ts.rv, k_n=k_n)
         gains_sorted = np.sort(pos_ts.rv)
         order_stat   = gains_sorted[-(k_n + 1)]
         

@@ -1,4 +1,5 @@
 from StockTicker import StockTicker
+from StockCache import StockCache
 from TimeSeries import TimeSeries
 import pandas as pd
 
@@ -20,16 +21,24 @@ class UserInput:
         self.time_series = self.time_series.split(split=self.split)
 
     def generate_time_series_from_stock_tickers(self, split):
+        cache = StockCache() 
         if (len([self.stock_tickers]) == 1) and not split:
-            series = (StockTicker(self.stock_tickers,start=self.from_date,end=self.to_date).get_prices().Close)
+            # series = (StockTicker(self.stock_tickers,start=self.from_date,end=self.to_date).get_prices().Close)
+            df = cache.get_prices(self.stock_tickers, start=self.from_date, end=self.to_date,
+                      interval='1d', auto_adjust=True, force_refresh=False, incremental=True)
+            series = df['Close']
             self.time_series = TimeSeries(time=series.index.values, 
                                           rv_name = self.stock_tickers, 
                                           rv=series.values)
         else :
             prices = []
             for stock_ticker in self.stock_tickers:
-                price = StockTicker(stock_ticker, start=self.from_date, end=self.to_date).get_prices()
-                prices.append(price.Close)
+                # price = StockTicker(stock_ticker, start=self.from_date, end=self.to_date).get_prices()
+                df = cache.get_prices(stock_ticker, start=self.from_date, end=self.to_date,
+                      interval='1d', auto_adjust=True, force_refresh=False, incremental=True)
+                series = df['Close']
+                # prices.append(price.Close)
+                prices.append(series)
             prices = pd.concat(prices, axis=1, join="inner", keys=self.stock_tickers) # prices[0].join(prices[1], how="inner")
             self.time_series = TimeSeries(time=prices.index.values, 
                                         covariate_name=self.stock_tickers[0],  

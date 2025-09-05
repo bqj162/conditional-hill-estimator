@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 class TimeSeries:
-    def __init__(self, time, rv_name, rv, covariate_name=None, covariate=None):
+    def __init__(self, rv_name, rv,time=None, covariate_name=None, covariate=None):
         self.time = time
         self.covariate = covariate
         self.covariate_name = covariate_name

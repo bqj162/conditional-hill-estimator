@@ -1,4 +1,7 @@
 import plotly.graph_objects as go
+from typing import Sequence
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 
@@ -50,7 +53,169 @@ class Plots:
         fig, (ax1, ax2) = plt.subplots(1,2)
         ax1.plot(k, bias_MSE_df['bias']  , label = 'Unconditional',linewidth=lw, linestyle='dashed', color='red')
         ax1.plot(k, bias_MSE_df['bias_t'], label = 'Conditional'  ,linewidth=lw, linestyle ='dashdot', color='green')
+        ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, label='zero')
         ax2.plot(k, bias_MSE_df['MSE']   , label = 'Unconditional',linewidth=lw, linestyle='dashed', color='red')
         ax2.plot(k, bias_MSE_df['MSE_t'] , label = 'Conditional'  ,linewidth=lw, linestyle ='dashdot', color='green')
+        ax1.set_xlabel('k_n')
+        ax2.set_xlabel('k_n')
+        ax1.set_ylabel('Bias')
+        ax2.set_ylabel('MSE')
+        ax1.legend()
+        ax2.legend()
         plt.tight_layout()
         plt.show()
+
+
+    def plot_gamma_sim(gamma_df):
+        k = gamma_df['k']
+        lw = 1
+        fig, ax = plt.subplots()
+        ax.plot(k, gamma_df['gamma']  , label = 'gamma',linewidth=lw, linestyle='dashed', color='red')
+        ax.plot(k, gamma_df['gamma_x'], label = 'gamma_x'  ,linewidth=lw, linestyle ='dashdot', color='green')
+        ax.plot(k, gamma_df['target'], color='black', linestyle='--', linewidth=1, label='target')
+        ax.set_xlabel('k_n')
+        ax.set_ylabel('gammas')
+        ax.legend()
+        plt.tight_layout()
+        plt.show()
+    
+    def plot_2x2_grid_param(results_df: pd.DataFrame,
+                            burn_ins: Sequence[int],
+                            col_param: str,
+                            col_values: Sequence,
+                            figsize=(12, 8),
+                            linewidth=1):
+        """
+        results_df must contain columns:
+        at least ['burn_in', col_param, 'k', 'bias', 'bias_t', 'MSE', 'MSE_t'].
+
+        burn_ins: sequence with exactly two burn_in values (first -> solid, second -> dashed)
+        col_param: parameter name that will define the columns (e.g. 'x_eval' or 'q')
+        col_values: values for the two columns (first two used)
+        """
+        if len(burn_ins) < 2 or len(col_values) < 2:
+            raise ValueError("Provide at least two burn_ins and two col_values.")
+
+        b0, b1 = int(burn_ins[0]), int(burn_ins[1])
+        c0, c1 = col_values[0], col_values[1]
+
+        results_df = results_df.sort_values([col_param, 'burn_in', 'k'])
+
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=figsize, sharex='col')
+
+        style_map = {
+            ('uncond', b0): ('red',  '-',  f'Uncond, n={b0}'),
+            ('uncond', b1): ('red',  '--', f'Uncond, n={b1}'),
+            ('cond',   b0): ('green','-',  f'Cond,   n={b0}'),
+            ('cond',   b1): ('green','-.', f'Cond,   n={b1}'),
+        }
+
+        def plot_subplot(ax, col_val, metric):
+            for (which, b), (color, ls, label) in style_map.items():
+                sel = results_df[(results_df[col_param] == col_val) & (results_df['burn_in'] == b)]
+                if sel.empty:
+                    continue
+                k = sel['k'].values
+                k_over_n = k / b
+                y = sel[metric].values if which == 'uncond' else sel[f"{metric}_t"].values
+                ax.plot(k_over_n, y, label=label, color=color, linestyle=ls,linewidth=linewidth)
+
+            if metric == 'bias':
+                ax.axhline(0.0, color='black', linestyle='--', linewidth=1)
+                ax.set_ylabel('Bias')
+            else:
+                ax.set_ylabel('MSE')
+            ax.set_xlabel('k/n')
+            ax.set_title(f"{metric}, {col_param} = {col_val}")
+            ax.grid(alpha=0.25)
+            ax.legend(fontsize='small')
+
+        plot_subplot(axes[0,0], c0, 'bias')
+        plot_subplot(axes[0,1], c1, 'bias')
+        plot_subplot(axes[1,0], c0, 'MSE')
+        plot_subplot(axes[1,1], c1, 'MSE')
+
+        plt.tight_layout()
+        plt.savefig(f"Bias_MSE_sim_{col_param}_eq_{col_values}_gamma.pdf")
+        plt.show()
+
+
+    # def plot_2x2_bias_mse_grid(results_df: pd.DataFrame,
+    #                        burn_ins: Sequence[int],
+    #                        x_evals: Sequence[float],
+    #                        figsize=(12, 8),
+    #                        linewidth=1):
+    #     """
+    #     results_df must contain columns:
+    #     ['burn_in', 'x_eval', 'k', 'bias', 'bias_t', 'MSE', 'MSE_t']
+    #     burn_ins: sequence with exactly two burn_in values (order matters: first -> solid, second -> dashed)
+    #     x_evals: sequence with exactly two x_eval values (left col = x_evals[0], right col = x_evals[1])
+    #     """
+
+    #     # Basic checks
+    #     if len(burn_ins) < 2 or len(x_evals) < 2:
+    #         raise ValueError("Provide at least two burn_ins and two x_evals (we use first two of each).")
+
+    #     # pick the first two of each
+    #     b0, b1 = int(burn_ins[0]), int(burn_ins[1])
+    #     x0, x1 = x_evals[0], x_evals[1]
+
+    #     # ensure k is sorted for plotting
+    #     results_df = results_df.copy()
+    #     results_df = results_df.sort_values(['x_eval','burn_in','k'])
+
+    #     # subplot grid: 2 rows (bias, MSE) x 2 cols (x_eval values)
+    #     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=figsize, sharex='col')
+
+    #     # mapping of (estimator, burn_in) -> (color, linestyle, label suffix)
+    #     style_map = {
+    #         ('uncond', b0): ('red',  '-',  f'Uncond, n={b0}'),
+    #         ('uncond', b1): ('red',  '--', f'Uncond, n={b1}'),
+    #         ('cond',   b0): ('green','-',  f'Cond,   n={b0}'),
+    #         ('cond',   b1): ('green','-.', f'Cond,   n={b1}'),
+    #     }
+
+    #     # helper to plot one subplot
+    #     def plot_subplot(ax, x_eval_val, metric):
+    #         # metric in {'bias','MSE'}
+    #         for (which, b), (color, ls, label) in style_map.items():
+    #             # select rows for this combination
+    #             sel = results_df[
+    #                 (results_df['x_eval'] == x_eval_val) &
+    #                 (results_df['burn_in'] == b)
+    #             ]
+    #             if sel.empty:
+    #                 continue
+    #             k = sel['k'].values
+    #             k_over_n = k / b
+    #             if which == 'uncond':
+    #                 y = sel[metric].values
+    #             else:
+    #                 # conditional metric names: bias_t / MSE_t
+    #                 y = sel[f"{metric}_t"].values
+
+    #             ax.plot(k_over_n, y, label=label, color=color, linestyle=ls, linewidth=linewidth)
+
+    #         if metric == 'bias':
+    #             ax.axhline(0.0, color='black', linestyle='--', linewidth=1)
+    #             ax.set_ylabel('Bias')
+    #         else:
+    #             ax.set_ylabel('MSE')
+
+    #         ax.set_xlabel('k/n')
+    #         ax.set_title(f"{metric},  x_eval = {x_eval_val}")
+    #         ax.grid(alpha=0.25)
+    #         ax.legend(fontsize='small')
+
+    #     # top-left: bias @ x0
+    #     plot_subplot(axes[0,0], x0, 'bias')
+    #     # top-right: bias @ x1
+    #     plot_subplot(axes[0,1], x1, 'bias')
+    #     # bottom-left: MSE @ x0
+    #     plot_subplot(axes[1,0], x0, 'MSE')
+    #     # bottom-right: MSE @ x1
+    #     plot_subplot(axes[1,1], x1, 'MSE')
+
+    #     plt.tight_layout()
+    #     plt.savefig(f"gamma_bias_MSE_sim_study.pdf")
+    #     plt.show()
