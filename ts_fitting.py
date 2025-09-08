@@ -6,6 +6,7 @@ from typing import NamedTuple
 from dataclasses import dataclass
 from TimeSeries import TimeSeries
 import numpy as np
+import inspect
 import matplotlib.pyplot as plt 
 
 class Forecast(NamedTuple):
@@ -25,7 +26,7 @@ class AR1GARCG11:
     series_name: str = "resid"
 
     @classmethod
-    def fit(cls, returns: pd.Series, name: str="resid") -> "AR1GARCG11":
+    def fit(cls, returns: pd.Series, name: str="resid", start_values: dict = None) -> "AR1GARCG11":
 
         x_t = returns.values
         x_tm1 = returns.shift(1).dropna().values
@@ -42,12 +43,14 @@ class AR1GARCG11:
             q=1,
             rescale=False
         )
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("error", category=ConvergenceWarning)
-                res = am.fit(disp="off")
-        except ConvergenceWarning:
-            res = am.fit(disp="off", method="powell")
+        fit_kwargs = dict(disp="off", update_freq=0, options={"maxiter": 100})
+
+        if start_values is not None:
+            sv = start_values.params.to_numpy(dtype=float) 
+            res = am.fit(starting_values=sv, **fit_kwargs)
+        else:
+            res = am.fit(**fit_kwargs)
+
         params = res.params
 
         alpha_0 = float(params.get("omega", params.get("alpha0", None)))
@@ -63,7 +66,7 @@ class AR1GARCG11:
             returns      = returns,    
             series_name  = name
         )
-
+   
     
     def forecast_1(self):
         f = self.fitted_model.forecast(horizon=1, reindex=False)

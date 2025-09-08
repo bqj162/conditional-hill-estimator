@@ -14,7 +14,7 @@
             "args": [
             "-s", "^GDAXI,^GDAXI", //"^GSPC,^GSPC", //  "BMW.DE,BMW.DE",//"^GDAXI,^GDAXI", // "^GDAXI,^GDAXI", // "BMW.DE,BMW.DE",// "^GDAXI,^GDAXI", // "^GSPC,^GSPC", //
             "-fd", "1995-01-01", // "2020-06-05",
-            "-td", "2005-07-01", // "2025-06-15",
+            "-td", "2015-07-01", // "2025-06-15",
             "-t", "log_diff",
             "-l", "0"
             ]

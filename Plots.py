@@ -34,18 +34,45 @@ class Plots:
 
     def plot_fit(self):
         fig, ax = plt.subplots()
-        ax.bar(self.quantile_fit.index,   self.quantile_fit['obs'], width=2.5, label='obs')
-        # ax.plot(fit.index, fit['x_hat']    , label='Conditional'  , linewidth=0.5, linestyle='dashed', color='red')
-        # ax.plot(fit.index, fit['x_hat_unc'], label='Unconditional', linewidth=0.5, linestyle ='dashdot', color='green')      
-        ax.scatter(self.quantile_fit.index,  self.quantile_fit['x_hat'],     s = 0.25 ,label='Conditional')
-        ax.scatter(self.quantile_fit.index,  self.quantile_fit['x_hat_unc'], s = 0.25 ,label='Unconditional')
+        ax.bar(self.quantile_fit.index,  self.quantile_fit['obs'], width=1.0, label='Log-returns')
+        ax.plot(self.quantile_fit.index, self.quantile_fit['x_hat']    , label='Conditional'  , linewidth=0.7, linestyle='dashed', color='red')
+        ax.plot(self.quantile_fit.index, self.quantile_fit['x_hat_unc'], label='Unconditional', linewidth=0.7, linestyle ='dashdot', color='green')      
+        # ax.scatter(self.quantile_fit.index,  self.quantile_fit['x_hat'],     s = 0.25 ,label='Conditional')
+        # ax.scatter(self.quantile_fit.index,  self.quantile_fit['x_hat_unc'], s = 0.25 ,label='Unconditional')
         ax.set_xlabel('Date')
-        ax.set_ylabel('Value')
+        ax.set_ylabel('Log-returns')
+        ax.set_title(f"{self.time_series.rv_name}, q = {self.q}")
         ax.legend()
         plt.xticks(rotation=30)
         plt.tight_layout()
         plt.savefig(f"Forecast_quantiles_q_{self.q}_{self.time_series.rv_name}.pdf")
         plt.show()
+
+    def plot_fitted_violations(self):
+        fig, ax = plt.subplots()
+       
+        ax.bar(self.quantile_fit.index, self.quantile_fit['obs'], width=1.0, label='Log-returns')
+       
+        cond_exceed = self.quantile_fit['obs'] > self.quantile_fit['x_hat']
+        unc_exceed  = self.quantile_fit['obs'] > self.quantile_fit['x_hat_unc']
+
+        ax.scatter(self.quantile_fit.index[cond_exceed], 
+                    self.quantile_fit['x_hat'][cond_exceed],  
+                    marker='o', color='red', s=20, label='Exceed Cond.')
+
+        ax.scatter(self.quantile_fit.index[unc_exceed], 
+                    self.quantile_fit['x_hat_unc'][unc_exceed], 
+                    marker='^', color='green', s=20, label='Exceed Uncond.')
+  
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Log-returns')
+        ax.set_title(f"{self.time_series.rv_name}, q = {self.q}")
+        ax.legend()
+        plt.xticks(rotation=30)
+        plt.tight_layout()
+        plt.savefig(f"Forecast_violations_q_{self.q}_{self.time_series.rv_name}.pdf")
+        plt.show()
+
 
     def plot_bias_MSE(bias_MSE_df):
         k = bias_MSE_df['k']
@@ -139,83 +166,3 @@ class Plots:
         plt.savefig(f"Bias_MSE_sim_{col_param}_eq_{col_values}_gamma.pdf")
         plt.show()
 
-
-    # def plot_2x2_bias_mse_grid(results_df: pd.DataFrame,
-    #                        burn_ins: Sequence[int],
-    #                        x_evals: Sequence[float],
-    #                        figsize=(12, 8),
-    #                        linewidth=1):
-    #     """
-    #     results_df must contain columns:
-    #     ['burn_in', 'x_eval', 'k', 'bias', 'bias_t', 'MSE', 'MSE_t']
-    #     burn_ins: sequence with exactly two burn_in values (order matters: first -> solid, second -> dashed)
-    #     x_evals: sequence with exactly two x_eval values (left col = x_evals[0], right col = x_evals[1])
-    #     """
-
-    #     # Basic checks
-    #     if len(burn_ins) < 2 or len(x_evals) < 2:
-    #         raise ValueError("Provide at least two burn_ins and two x_evals (we use first two of each).")
-
-    #     # pick the first two of each
-    #     b0, b1 = int(burn_ins[0]), int(burn_ins[1])
-    #     x0, x1 = x_evals[0], x_evals[1]
-
-    #     # ensure k is sorted for plotting
-    #     results_df = results_df.copy()
-    #     results_df = results_df.sort_values(['x_eval','burn_in','k'])
-
-    #     # subplot grid: 2 rows (bias, MSE) x 2 cols (x_eval values)
-    #     fig, axes = plt.subplots(nrows=2, ncols=2, figsize=figsize, sharex='col')
-
-    #     # mapping of (estimator, burn_in) -> (color, linestyle, label suffix)
-    #     style_map = {
-    #         ('uncond', b0): ('red',  '-',  f'Uncond, n={b0}'),
-    #         ('uncond', b1): ('red',  '--', f'Uncond, n={b1}'),
-    #         ('cond',   b0): ('green','-',  f'Cond,   n={b0}'),
-    #         ('cond',   b1): ('green','-.', f'Cond,   n={b1}'),
-    #     }
-
-    #     # helper to plot one subplot
-    #     def plot_subplot(ax, x_eval_val, metric):
-    #         # metric in {'bias','MSE'}
-    #         for (which, b), (color, ls, label) in style_map.items():
-    #             # select rows for this combination
-    #             sel = results_df[
-    #                 (results_df['x_eval'] == x_eval_val) &
-    #                 (results_df['burn_in'] == b)
-    #             ]
-    #             if sel.empty:
-    #                 continue
-    #             k = sel['k'].values
-    #             k_over_n = k / b
-    #             if which == 'uncond':
-    #                 y = sel[metric].values
-    #             else:
-    #                 # conditional metric names: bias_t / MSE_t
-    #                 y = sel[f"{metric}_t"].values
-
-    #             ax.plot(k_over_n, y, label=label, color=color, linestyle=ls, linewidth=linewidth)
-
-    #         if metric == 'bias':
-    #             ax.axhline(0.0, color='black', linestyle='--', linewidth=1)
-    #             ax.set_ylabel('Bias')
-    #         else:
-    #             ax.set_ylabel('MSE')
-
-    #         ax.set_xlabel('k/n')
-    #         ax.set_title(f"{metric},  x_eval = {x_eval_val}")
-    #         ax.grid(alpha=0.25)
-    #         ax.legend(fontsize='small')
-
-    #     # top-left: bias @ x0
-    #     plot_subplot(axes[0,0], x0, 'bias')
-    #     # top-right: bias @ x1
-    #     plot_subplot(axes[0,1], x1, 'bias')
-    #     # bottom-left: MSE @ x0
-    #     plot_subplot(axes[1,0], x0, 'MSE')
-    #     # bottom-right: MSE @ x1
-    #     plot_subplot(axes[1,1], x1, 'MSE')
-
-    #     plt.tight_layout()
-    #     plt.savefig(f"gamma_bias_MSE_sim_study.pdf")
-    #     plt.show()

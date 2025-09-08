@@ -1,4 +1,5 @@
 import sys
+import time
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -26,7 +27,8 @@ def main():
         html.generate_HTML()
 
 if __name__ == "__main__":
-        # from_date = "2015-01-01"
+        # t0 = time.perf_counter()
+        # from_date = "2000-01-01"
         # to_date = "2025-07-01"
         # args_list =[
         #         ["-s", "^GSPC,^GSPC"  ,"-fd", from_date, "-td", to_date,"-t", "log_diff","-l", "0"],
@@ -37,8 +39,9 @@ if __name__ == "__main__":
         # ]
         
         # q_s = [0.95, 0.99, 0.995]
-        # out = run_batch_backtests(args_list, q_s, fitting_window=400)
-        
+        # out = run_batch_backtests(args_list, q_s, fitting_window=1000)
+        # t1 = time.perf_counter()
+        # print(f"Estimation took {t1 - t0:.3f} seconds")
         # print(out)
         # as_good_as  = (out['p_Unconditional']     <= out['p_Conditional']).sum()
         # print(f"Conditional as good as Unconditional: {as_good_as} out of 15")
@@ -50,34 +53,22 @@ if __name__ == "__main__":
         # print(f"Unconditional significant: {unconditional_sig} out of 15")
 
         #-------------------One ts below-----------------------
+        t0 = time.perf_counter()
         args = sys.argv
         user_input  = parse_command_line_arguments(args[1:], split=False)
         log_returns = user_input.time_series
-        chosen_q    = [0.995]
+        chosen_q    = [0.95]
 
         q_series = quantileSeries(q = chosen_q, time_series = log_returns,fitting_window= 500)
         fit      = q_series.estimate()
+        t1 = time.perf_counter()
+        print(f"Estimation took {t1 - t0:.3f} seconds")
+
         b_test   = back_test(fit, chosen_q, log_returns.rv_name)
-        plots    = Plots(time_series=log_returns, hill_estimate=None, quantile_fit=fit, q=chosen_q[0])
-        plots.plot_fit()
-        # def alpha(x): return 0.5 + abs(x)
-        # def gamma(x): return 1.2 + 1/alpha(x)
-        # rng = np.random.default_rng()
-        # burn_in = 10000
-        # init = 1
-        # chain = simulate_chain(gamma, n = 1, burn_in = burn_in + 1, rng = rng)
-        # rv = chain[0:burn_in]
-        # cv = np.r_[init, chain[0:(burn_in-1)]] 
-        # ts = TimeSeries(rv_name="MC_sim", rv = rv, covariate = cv, covariate_name= "lagged")
-        # hill_estimator = HillEstimator(ts)
-        # hill_estimate = hill_estimator.estimate() # estimate includes x, k, gamma
-        # plot_list = []
-        # plots = Plots(ts, hill_estimate)
-        # plot_list.append(plots.plot_3d())
-        # html = HTML(plot_list)
-        # html.generate_HTML()
-
-
-
+        print(b_test)
+        plots    = Plots(time_series=log_returns, hill_estimate=None, quantile_fit=fit.loc["2008-01-02":"2010-12-31"], q=chosen_q[0])
+        # plots.plot_fit()
+        plots.plot_fitted_violations()
+        
         # main()
 
