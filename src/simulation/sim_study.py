@@ -3,10 +3,10 @@ import pandas as pd
 import sys
 import time
 from typing import Callable, Dict, Iterable, Any
-from simulator import simulate_chains
-from simulator import simulate_chain
-from HillEstimator import HillEstimator
-from Plots import Plots
+from src.simulation.simulator import simulate_chains
+from src.simulation.simulator import simulate_chain
+from src.estimators.HillEstimator import HillEstimator
+from src.plotting.Plots import Plots
 from joblib import Parallel, delayed
 from itertools import product
 
