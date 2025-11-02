@@ -62,8 +62,8 @@ class HillEstimator:
         x_ranked = rankdata(X) / (n_x + 1)
         # kde = FFTKDE(bw='ISJ').fit(x_ranked)
         # h =  kde.bw**2 # /2 
-        # h = np.sqrt(k_n/n_x)
-        h = np.sqrt(np.log(k_n)/n_x).astype(float)
+        h = np.sqrt(k_n/n_x)
+        # h = np.sqrt(np.log(k_n)/n_x).astype(float)
         sort_idx = np.argsort(Y)
         y_sorted = Y[sort_idx]
         x_sorted = x_ranked[sort_idx]

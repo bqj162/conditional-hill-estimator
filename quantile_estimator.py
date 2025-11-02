@@ -68,10 +68,10 @@ class quantileSeries:
         z_t = pos_rv[-1]
         n = len(pos_ts.rv)
         # k_n = int(np.floor(n/20)) 
-        k_n = int(np.floor(n/10)) 
+        # k_n = int(np.floor(n/10)) 
         # k_n = int(np.floor(np.sqrt(n)))
         # k_n = int(np.floor(n**(3/5)))
-        # k_n = int(np.floor(n**(2/3)))
+        k_n = int(np.floor(n**(2/3)))
         # k_n = int(np.floor(n**(3/4)))
         # k_n = int(np.floor(n**(4/5)))
         # gamma = Hill.gamma_fixed_k_n_x(X = Hill.time_series.covariate,
