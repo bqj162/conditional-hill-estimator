@@ -76,7 +76,7 @@ class HillEstimator:
         W = K_X/sum(K_X)
         s = 1 - np.cumsum(W)
         idx = np.min(np.where(s < k_n / n_x))
-        q_n = y_sorted[idx]
+        q_n = y_sorted[idx] 
        
         gamma = (n_x / k_n) * np.sum(W[idx:] * np.log((y_sorted[idx:] / q_n).astype(float)))
 

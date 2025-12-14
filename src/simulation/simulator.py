@@ -4,7 +4,8 @@ from typing import Callable, Optional
 
 def simulate_chain(
     gamma: Callable[[float], float],
-    n: int,
+    family: str = "Pareto",
+    n: int = 1000,
     X0: float = 1.0,
     burn_in: int = 0,
     rng: Optional[np.random.Generator] = None,
@@ -15,13 +16,21 @@ def simulate_chain(
     x = float(X0)
 
     results = np.empty([n, burn_in])
-    for i in range(n):
-        x = float(X0)
-        for j in range(burn_in):
-            u = float(rng.random())
-            # x = math.exp(-math.log(u) / float(alpha(x)))
-            x = (1-u)**(-gamma(x))
-            results[i,j] = x
+    if family == "Pareto":
+        for i in range(n):
+            x = float(X0)
+            for j in range(burn_in):
+                u = float(rng.random())
+                # x = math.exp(-math.log(u) / float(alpha(x)))
+                x = (1-u)**(-gamma(x))
+                results[i,j] = x
+    if family == "Frechet":
+        for i in range(n):
+            x = float(X0)
+            for j in range(burn_in):
+                u = float(rng.random())
+                x = (-np.log(1-u))**(-gamma(x)) 
+                results[i,j] = x
 
     if n == 1:
         return results[0]

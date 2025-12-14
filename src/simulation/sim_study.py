@@ -3,8 +3,8 @@ import pandas as pd
 import sys
 import time
 from typing import Callable, Dict, Iterable, Any
-from src.simulation.simulator import simulate_chains
-from src.simulation.simulator import simulate_chain
+# from src.simulation.simulator import simulate_chain
+from .simulator import simulate_chain
 from src.estimators.HillEstimator import HillEstimator
 from src.plotting.Plots import Plots
 from joblib import Parallel, delayed
@@ -63,7 +63,7 @@ def sim_gamma(n_samples: int, burn_in: int, gamma_func: Callable[[float], float]
     return pd.DataFrame({'k': k_n, 'gamma': gamma/n_samples, 'gamma_x': gamma_x/n_samples, 'target' : target})
 
 
-def sim_bias_MSE_gamma(n_samples: int, burn_in: int, gamma_func: Callable[[float], float], init_state: float, x_eval: float, base_seed:int = 0) -> pd.DataFrame:
+def sim_bias_MSE_gamma(n_samples: int, burn_in: int, gamma_func: Callable[[float], float], family:str, init_state: float, x_eval: float, base_seed:int = 0) -> pd.DataFrame:
 
     k_n = np.unique(np.floor(np.linspace(0.01 * burn_in, .9 * burn_in, 200)).astype(int))
     sum_bias, sum_bias_t, sum_sq, sum_sq_t = [np.zeros(len(k_n), dtype=float) for _ in range(4)]
@@ -71,7 +71,7 @@ def sim_bias_MSE_gamma(n_samples: int, burn_in: int, gamma_func: Callable[[float
 
     for i in range(n_samples):
         rng = np.random.default_rng(seed=base_seed+i)
-        chain = simulate_chain(gamma_func, n = 1, burn_in = burn_in + 1, rng = rng)
+        chain = simulate_chain(gamma_func, n = 1, family = family, burn_in = burn_in + 1, rng = rng)
         rv = chain[0:burn_in]
         cv = np.r_[init_state, chain[0:(burn_in-1)]] 
         hill     = HillEstimator.unconditional_hill_vectorized(Y = rv, k_array = k_n)
@@ -87,16 +87,17 @@ def sim_bias_MSE_gamma(n_samples: int, burn_in: int, gamma_func: Callable[[float
                          'MSE': sum_sq/n_samples, 'MSE_t': sum_sq_t/n_samples})
 
     
-def sim_bias_MSE_vec_part(n_samples: int, burn_in: int, gamma_func: Callable[[float], float], init_state: float, q: float, base_seed:int = 0) -> pd.DataFrame:
+def sim_bias_MSE_vec_part(n_samples: int, burn_in: int, gamma_func: Callable[[float], float], family:str, init_state: float, q: float, base_seed:int = 0) -> pd.DataFrame:
 
     k_n = np.unique(np.floor(np.linspace((1-q) * burn_in, 0.9 * burn_in, 200)).astype(int))
     sum_bias, sum_bias_t, sum_sq, sum_sq_t = [np.zeros(len(k_n), dtype=float) for _ in range(4)]
 
     for i in range(n_samples):
         rng = np.random.default_rng(seed=base_seed+i)
-        chain = simulate_chain(gamma_func, n = 1, burn_in = burn_in + 1, rng = rng)
+        chain = simulate_chain(gamma_func, n = 1, family = family, burn_in = burn_in + 1, rng = rng)
         Z_t = chain[-1]
         z_q = (1-q)**(-gamma_func(Z_t))
+        # z_q = (-np.log(1-q))**(-gamma_func(Z_t))
         rv = chain[0:burn_in]
         cv = np.r_[init_state, chain[0:(burn_in-1)]] 
         rv_sorted = np.sort(rv)
@@ -104,6 +105,14 @@ def sim_bias_MSE_vec_part(n_samples: int, burn_in: int, gamma_func: Callable[[fl
 
         hill     = HillEstimator.unconditional_hill_vectorized(Y = rv, k_array = k_n)
         cond_hil = HillEstimator.gamma_fixed_k_n_x_vectorized(X = cv, Y = rv, k_array = k_n, x = Z_t)
+
+        #---
+        # rv_ex = rv - cond_hil['q_n']
+        # hill  = HillEstimator.unconditional_hill_vectorized(Y = rv - threshold, k_array = k_n)
+        # cond_hil = HillEstimator.gamma_fixed_k_n_x_vectorized(X = cv, Y = rv_ex, k_array = k_n, x = Z_t)
+        # z_hat   = threshold       + (hill)*(((1-q)/(k_n/burn_in))**(-hill)-1)
+        # z_hat_t = cond_hil['q_n'] + (cond_hil['gamma'])*(((1-q)/(k_n/burn_in))**(-cond_hil['gamma'])-1)
+        #---
             
         z_hat   = threshold*((1-q)/(k_n/burn_in))**(-hill)
         z_hat_t = cond_hil['q_n']*((1-q)/(k_n/burn_in))**(-cond_hil['gamma'])
@@ -130,9 +139,9 @@ def _is_debugging():
 if __name__ == "__main__":
     def gamma(x): return 1/(1+abs(x)) # def gamma(x): return 3*x*(x-1)+1
     t0 = time.perf_counter()
-    args = {'n_samples': 100, 'gamma_func' : gamma, 'init_state': 2, 'base_seed':0}
+    args = {'n_samples': 100, 'gamma_func' : gamma, 'family': "Pareto", 'init_state': 1, 'base_seed':0}
     burn_ins = [1000, 10000]
-
+    sim_bias_MSE_vec_part(n_samples= args['n_samples'], burn_in= burn_ins[0], gamma_func= args['gamma_func'], family= args['family'], init_state= args['init_state'], q = 0.95, base_seed= args['base_seed'])
     # x_evals = [2, 5]
     # sweep_x = {'x_eval': [2, 5], 'burn_in' : [1000, 10000]}
     # grid_x = run_grid_generic(sim_one_func=sim_bias_MSE_gamma, fixed_args= args, sweep=sweep_x, n_jobs=-2)

@@ -1,7 +1,7 @@
 import shlex
 import argparse
 import pandas as pd
-from TimeSeries import TimeSeries
+from .TimeSeries import TimeSeries
 from UserInput import UserInput
 from types import SimpleNamespace
 from typing import Optional

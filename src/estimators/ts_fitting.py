@@ -4,7 +4,7 @@ from arch import arch_model
 from arch.univariate.base import ConvergenceWarning
 from typing import NamedTuple
 from dataclasses import dataclass
-from TimeSeries import TimeSeries
+from src.data.TimeSeries import TimeSeries
 import numpy as np
 import inspect
 import matplotlib.pyplot as plt 

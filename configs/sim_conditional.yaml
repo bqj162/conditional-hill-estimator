@@ -1,0 +1,10 @@
+simulation:
+  tail_index_fn: "inverse_abs"
+  quantile_levels: [0.95, 0.99, 0.995]
+  burn_in: 500
+  nrep: 2000
+  plot: true
+  compare_unconditional: true
+  family: "pareto"
+  seed: 123
+  initial_state: 1.0

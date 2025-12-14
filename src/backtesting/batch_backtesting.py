@@ -1,8 +1,8 @@
 def run_batch_backtests(args_list, q_s, fitting_window):
     import pandas as pd
-    from parser import parse_command_line_arguments
-    from quantile_estimator import quantileSeries
-    from backtesting import back_test
+    from src.data.parser import parse_command_line_arguments
+    from src.estimators.quantile_estimator import quantileSeries
+    from .backtesting import back_test
 
     results = []
     for args in args_list:

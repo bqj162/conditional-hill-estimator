@@ -1,10 +1,10 @@
 import pandas as pd
 import numpy as np
-from ts_fitting import AR1GARCG11
 from joblib import Parallel, delayed
-from HillEstimator import HillEstimator
-from TimeSeries import TimeSeries
 import cProfile, pstats
+from .ts_fitting import AR1GARCG11
+from .HillEstimator import HillEstimator
+from src.data.TimeSeries import TimeSeries
 
 class quantileSeries:
     def __init__(self, time_series, q, fitting_window):

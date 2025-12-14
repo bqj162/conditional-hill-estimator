@@ -4,15 +4,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import scipy
-from HTML import HTML
-from HillEstimator import HillEstimator
-from TimeSeries import TimeSeries
-from Plots import Plots
-from quantile_estimator import quantileSeries
-from parser import parse_command_line_arguments
-from backtesting import back_test
-from batch_backtesting import run_batch_backtests, generate_backtest_latex
-from simulator import simulate_chain
+from src.reporting.HTML import HTML
+from src.estimators.HillEstimator import HillEstimator
+from src.data.TimeSeries import TimeSeries
+from src.plotting.Plots import Plots
+from src.estimators.quantile_estimator import quantileSeries
+from src.data.parser import parse_command_line_arguments
+from src.backtesting.backtesting import back_test
+from src.backtesting.batch_backtesting import run_batch_backtests, generate_backtest_latex
+from src.simulation.simulator import simulate_chain
 
 def main():
         user_input = parse_command_line_arguments(sys.argv, split=True)

@@ -1,6 +1,6 @@
-from StockTicker import StockTicker
-from StockCache import StockCache
-from TimeSeries import TimeSeries
+from src.data.StockTicker import StockTicker
+from src.data.StockCache import StockCache
+from src.data.TimeSeries import TimeSeries
 import pandas as pd
 
 class UserInput:

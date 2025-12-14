@@ -45,7 +45,7 @@ class Plots:
         ax.legend()
         plt.xticks(rotation=30)
         plt.tight_layout()
-        plt.savefig(f"Forecast_quantiles_q_{self.q}_{self.time_series.rv_name}.pdf")
+        plt.savefig(f"Plots/Forecast_quantiles_q_{self.q}_{self.time_series.rv_name}.pdf")
         plt.show()
 
     def plot_fitted_violations(self):
@@ -70,7 +70,7 @@ class Plots:
         ax.legend()
         plt.xticks(rotation=30)
         plt.tight_layout()
-        plt.savefig(f"Forecast_violations_q_{self.q}_{self.time_series.rv_name}.pdf")
+        plt.savefig(f"Plots/Forecast_violations_q_{self.q}_{self.time_series.rv_name}.pdf")
         plt.show()
 
 
@@ -163,6 +163,6 @@ class Plots:
         plot_subplot(axes[1,1], c1, 'MSE')
 
         plt.tight_layout()
-        plt.savefig(f"Bias_MSE_sim_{col_param}_eq_{col_values}_gamma.pdf")
+        plt.savefig(f"Plots/Bias_MSE_sim_{col_param}_eq_{col_values}_gamma.pdf")
         plt.show()
 
