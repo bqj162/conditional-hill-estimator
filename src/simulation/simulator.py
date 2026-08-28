@@ -1,5 +1,4 @@
 import numpy as np
-import math
 from typing import Callable, Optional
 
 def simulate_chain(
@@ -10,27 +9,28 @@ def simulate_chain(
     burn_in: int = 0,
     rng: Optional[np.random.Generator] = None,
 ) -> np.ndarray:
+    if n < 1:
+        raise ValueError("n must be at least one")
+    if burn_in < 1:
+        raise ValueError("burn_in must be at least one")
+
     if rng is None:
         rng = np.random.default_rng()
 
-    x = float(X0)
-
     results = np.empty([n, burn_in])
-    if family == "Pareto":
-        for i in range(n):
-            x = float(X0)
-            for j in range(burn_in):
-                u = float(rng.random())
-                # x = math.exp(-math.log(u) / float(alpha(x)))
+    family_key = family.casefold()
+    if family_key not in {"pareto", "frechet"}:
+        raise ValueError("family must be either 'Pareto' or 'Frechet'")
+
+    for i in range(n):
+        x = float(X0)
+        for j in range(burn_in):
+            u = float(rng.random())
+            if family_key == "pareto":
                 x = (1-u)**(-gamma(x))
-                results[i,j] = x
-    if family == "Frechet":
-        for i in range(n):
-            x = float(X0)
-            for j in range(burn_in):
-                u = float(rng.random())
-                x = (-np.log(1-u))**(-gamma(x)) 
-                results[i,j] = x
+            else:
+                x = (-np.log(1-u))**(-gamma(x))
+            results[i, j] = x
 
     if n == 1:
         return results[0]
@@ -54,7 +54,7 @@ def simulate_chains(alpha: Callable[[np.ndarray], np.ndarray],
         a = alpha(X[:, t-1])                      # vectorized alpha over samples
         X[:, t] = U[:, t-1] ** (-1.0 / a)
     return X
-    
+
 
 
 if __name__ == "__main__":
@@ -62,4 +62,3 @@ if __name__ == "__main__":
     samples = simulate_chain(alpha, n=10, X0=1.0, burn_in=5)
     print(samples)
     print(f"Mean: {np.mean(samples)}, Std: {np.std(samples)}")
-

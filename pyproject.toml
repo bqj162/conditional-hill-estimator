@@ -1,0 +1,17 @@
+[tool.pyright]
+include = ["main.py", "UserInput.py", "src", "tests"]
+exclude = ["results"]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["F"]

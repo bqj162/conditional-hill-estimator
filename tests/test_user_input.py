@@ -41,6 +41,7 @@ class UserInputTests(unittest.TestCase):
 
         loss_series = user_input.time_series[0]
         self.assertEqual(loss_series.rv_name, "^GDAXI_loss")
+        assert loss_series.time is not None
         np.testing.assert_allclose(
             loss_series.rv,
             -np.diff(np.log(np.array([100.0, 110.0, 99.0]))),
