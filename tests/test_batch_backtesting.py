@@ -9,7 +9,7 @@ from src.data.TimeSeries import TimeSeries
 
 
 class BatchBacktestingTests(unittest.TestCase):
-    def test_single_prepared_series_is_passed_to_quantile_estimator(self) -> None:
+    def test_batch_delegates_each_series_to_single_backtest(self) -> None:
         series = TimeSeries(rv_name="^GDAXI_loss", rv=[0.01, 0.02, 0.03])
         fitted = pd.DataFrame({"q": [0.95], "obs": [0.02], "x_hat": [0.03]})
         backtest_result = pd.DataFrame({"name": ["^GDAXI_loss"]})
@@ -20,26 +20,21 @@ class BatchBacktestingTests(unittest.TestCase):
                 return_value=SimpleNamespace(time_series=[series]),
             ),
             patch(
-                "src.backtesting.batch_backtesting.quantileSeries"
-            ) as estimator,
-            patch(
-                "src.backtesting.batch_backtesting.back_test",
-                return_value=backtest_result,
-            ) as back_test,
+                "src.backtesting.batch_backtesting.run_single_backtest",
+                return_value=(fitted, backtest_result),
+            ) as run_single_backtest,
         ):
-            estimator.return_value.estimate.return_value = fitted
             result = run_batch_backtests(
                 [["--stocks", "^GDAXI"]],
                 q_s=[0.95],
                 fitting_window=3,
             )
 
-        estimator.assert_called_once_with(
-            q=[0.95],
+        run_single_backtest.assert_called_once_with(
             time_series=series,
+            quantiles=[0.95],
             fitting_window=3,
         )
-        back_test.assert_called_once_with(fitted, [0.95], "^GDAXI_loss")
         pd.testing.assert_frame_equal(result, backtest_result)
 
 

@@ -1,5 +1,3 @@
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import plotly.offline as pyo
 import webbrowser
 import os
@@ -22,4 +20,3 @@ class HTML:
         html.write("</body></html>" + "\n")
         html.close()
         webbrowser.open('file://' + os.path.realpath(filename))
-
