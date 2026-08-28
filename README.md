@@ -16,19 +16,19 @@ experiments and reproducibility.
 The classical Hill estimator treats the upper tail index as constant. Here the
 tail index may vary with a state or covariate:
 
-$$
+```math
 \widehat{\gamma}_{k_n}(x)
 =
 \frac{n}{k_n}
 \frac{
 \sum_{j=1}^{n}
 K\!\left(\frac{x-X_j}{h_n}\right)
-\log_+\!\left(\frac{Y_j}{q_n(x)}\right)
+\log_{+}\!\left(\frac{Y_j}{q_n(x)}\right)
 }{
 \sum_{j=1}^{n}
 K\!\left(\frac{x-X_j}{h_n}\right)
 }.
-$$
+```
 
 The implementation rank-transforms the covariate, applies Gaussian kernel
 weights, estimates a local threshold and tail index, and compares the resulting
