@@ -1,9 +1,8 @@
 from pathlib import Path
 import pandas as pd
 import yfinance as yf
-import numpy as np
-from typing import Optional
-import datetime
+from datetime import timedelta
+from typing import Optional, cast
 
 class StockCache:
     def __init__(self, cache_dir: Optional[Path] = None):
@@ -23,6 +22,17 @@ class StockCache:
         df.to_parquet(tmp, index=True)   # parquet is fast & compressed
         tmp.replace(path)                # atomic on most platforms
 
+    @staticmethod
+    def _ensure_frame(
+        data: pd.DataFrame | pd.Series | None,
+        ticker: str,
+    ) -> pd.DataFrame:
+        if data is None:
+            raise RuntimeError(f"No data returned from yfinance for {ticker}")
+        if isinstance(data, pd.Series):
+            return data.to_frame()
+        return data
+
     def get_prices(self,
                    ticker: str,
                    start: Optional[str] = None,
@@ -39,7 +49,9 @@ class StockCache:
         path = self._cache_path(ticker, start, end, interval)
         if path.exists() and (not force_refresh):
             try:
-                df = pd.read_parquet(path)
+                df = self._ensure_frame(pd.read_parquet(path), ticker)
+                if df.empty:
+                    raise ValueError(f"Cached price data for {ticker} is empty")
                 # ensure index is DatetimeIndex
                 if not isinstance(df.index, pd.DatetimeIndex):
                     df.index = pd.to_datetime(df.index)
@@ -58,22 +70,35 @@ class StockCache:
         if path.exists() and incremental and (not force_refresh):
             # attempt incremental update
             try:
-                df_old = pd.read_parquet(path)
+                df_old = self._ensure_frame(pd.read_parquet(path), ticker)
+                if df_old.empty:
+                    raise ValueError(f"Cached price data for {ticker} is empty")
                 if not isinstance(df_old.index, pd.DatetimeIndex):
                     df_old.index = pd.to_datetime(df_old.index)
-                last_date = df_old.index.max().normalize()
+                last_date = cast(
+                    pd.Timestamp,
+                    pd.Timestamp(str(df_old.index.max())),
+                ).normalize()
                 # fetch from next day onwards
-                new_start = (last_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+                new_start = (
+                    last_date.to_pydatetime() + timedelta(days=1)
+                ).strftime("%Y-%m-%d")
                 # don't request end earlier than new_start
                 actual_end = end
                 if start is not None:
                     # if user requested a start later than cached range, full refresh
-                    if pd.to_datetime(start) > last_date:
-                        df_new = yf.download(ticker, start=start, end=end, interval=interval, auto_adjust=auto_adjust)
+                    if pd.Timestamp(start) > last_date:
+                        df_new = self._ensure_frame(
+                            yf.download(ticker, start=start, end=end, interval=interval, auto_adjust=auto_adjust),
+                            ticker,
+                        )
                         df_all = df_new
                     else:
-                        df_new = yf.download(ticker, start=new_start, end=actual_end, interval=interval, auto_adjust=auto_adjust)
-                        if df_new is None or df_new.empty:
+                        df_new = self._ensure_frame(
+                            yf.download(ticker, start=new_start, end=actual_end, interval=interval, auto_adjust=auto_adjust),
+                            ticker,
+                        )
+                        if df_new.empty:
                             df_all = df_old
                         else:
                             # align columns and append (avoid duplicates)
@@ -83,8 +108,11 @@ class StockCache:
                             df_all = df_combined
                 else:
                     # no user start specified -> append new rows
-                    df_new = yf.download(ticker, start=new_start, end=actual_end, interval=interval, auto_adjust=auto_adjust)
-                    if df_new is None or df_new.empty:
+                    df_new = self._ensure_frame(
+                        yf.download(ticker, start=new_start, end=actual_end, interval=interval, auto_adjust=auto_adjust),
+                        ticker,
+                    )
+                    if df_new.empty:
                         df_all = df_old
                     else:
                         df_new.index = pd.to_datetime(df_new.index)
@@ -92,7 +120,9 @@ class StockCache:
                         df_combined = df_combined[~df_combined.index.duplicated(keep='last')]
                         df_all = df_combined
 
-                # save combined dataset atomically
+                # pandas' concat stubs also allow Series, but every branch above
+                # starts from and preserves DataFrames.
+                df_all = cast(pd.DataFrame, df_all)
                 self._atomic_write_parquet(df_all, path)
                 # return requested slice if user requested window
                 if start is not None or end is not None:
@@ -105,13 +135,20 @@ class StockCache:
                 pass
 
         # Full download (either no cache or fallback)
-        df = yf.download(ticker, start=start, end=end, interval=interval, auto_adjust=auto_adjust)
-        if df is None:
-            raise RuntimeError(f"No data returned from yfinance for {ticker}")
+        df = self._ensure_frame(
+            yf.download(ticker, start=start, end=end, interval=interval, auto_adjust=auto_adjust),
+            ticker,
+        )
+        if df.empty:
+            raise RuntimeError(
+                f"No price data returned from yfinance for {ticker}; "
+                "the empty response was not cached"
+            )
         # ensure datetime index and timezone
-        df.index = pd.to_datetime(df.index)
+        datetime_index = pd.DatetimeIndex(pd.to_datetime(df.index))
+        df.index = datetime_index
         # localize tz only if naive index and you want US/Eastern (optional)
-        if df.index.tz is None:
+        if datetime_index.tz is None:
             # choose the timezone you prefer; often better to keep tz-naive or convert to UTC:
             # df.index = df.index.tz_localize("US/Eastern")
             pass

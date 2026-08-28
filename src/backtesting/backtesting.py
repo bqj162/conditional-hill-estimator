@@ -1,5 +1,7 @@
 from scipy.stats import binomtest
 import pandas as pd
+from src.data.TimeSeries import TimeSeries
+from src.estimators.quantile_estimator import QuantileSeries
 
 def back_test(fit, qs, name):
     results = []
@@ -21,3 +23,18 @@ def back_test(fit, qs, name):
         results.append(frame)
     out = pd.concat(results, ignore_index=True)
     return out
+
+
+def run_single_backtest(
+    time_series: TimeSeries,
+    quantiles: list[float],
+    fitting_window: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    estimator = QuantileSeries(
+        time_series=time_series,
+        q=quantiles,
+        fitting_window=fitting_window,
+    )
+    forecasts = estimator.estimate()
+    results = back_test(forecasts, quantiles, time_series.rv_name)
+    return forecasts, results

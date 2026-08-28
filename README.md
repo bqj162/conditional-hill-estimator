@@ -1,76 +1,148 @@
-# Conditional Hill Estimator
-#### Video Demo:  https://youtu.be/UQbEDHsfRxk
-#### Description: 
-The Hill estimator presented by Hill (1975) estimates the tail index for regularly varying sequence of random variables. Common goals of such estimator is to establish asymptotic properties such as consistency and asymptotic normality, which have been studied in the case of the Hill estimator for both iid, mixing sequences and networks. 
-In this project, the task of analyzing extremal events for mixing regularly varying time series in the presence of random covariates is considered. 
-The goal of this program is to implement a Nadaraya-Watson estimator of the conditional tail index of a stationary sequence $(Y_n)_{n \in \mathbb{Z}}$ given a covariate sequence $(X_n)_{n \in \mathbb{Z}}$.  
+# Conditional Hill Estimation for Regularly Varying Markov Chains
+
+[![checks](https://github.com/bqj162/conditional-hill-estimator/actions/workflows/checks.yml/badge.svg?branch=RV_markov_chains)](https://github.com/bqj162/conditional-hill-estimator/actions/workflows/checks.yml)
+
+Research code for an ongoing paper on prediction of extremes in
+regularly varying Markov chains. The repository implements conditional
+tail-index estimation, financial time-series filtering, extreme-quantile
+forecasting, coverage backtests, and reproducible parallel simulation studies.
+
+This is an active research repository, not a production risk system or a
+general-purpose Python package. The emphasis is on transparent statistical
+experiments and reproducibility.
+
+## Research question
+
+The classical Hill estimator treats the upper tail index as constant. Here the
+tail index may vary with a state or covariate:
+
 $$
-    \widehat{\gamma}_{k_n}(x) =
-   \frac{n}{k_{n}} \frac{\sum_{j=1}^{n}K\left(\frac{x-X_{j}}{h_{n}}\right)\log_{+} \left(\frac{Y_j}{q_n}\right)}
-   {\sum_{j=1}^{n}K\left(\frac{x-X_{j}}{h_{n}}\right)},
+\widehat{\gamma}_{k_n}(x)
+=
+\frac{n}{k_n}
+\frac{
+\sum_{j=1}^{n}
+K\!\left(\frac{x-X_j}{h_n}\right)
+\log_+\!\left(\frac{Y_j}{q_n(x)}\right)
+}{
+\sum_{j=1}^{n}
+K\!\left(\frac{x-X_j}{h_n}\right)
+}.
 $$
-where $K$ is a kernel satisfying certain regularity conditions, $k_n$ is an intermediate sequence diverging to infinity and $q_n = F^{\leftarrow, x}_{n}\left(1-\frac{k_n}{n}\right)$ is the generalized inverse of the conditional distribution of $Y_0$ given $X_0 = x$. 
 
-Input: The user of the program have two options regarding input. The first option is to upload a csv file with three columns, where the first column are dates, the second column is the value of time series of interest $(Y_n)_{n \in \mathbb{Z}}$ and the third column is the value of the covariate process of interest $(X_n)_{n \in \mathbb{Z}}$.
-The second type of input to be provided is the kernel, the user wants to use in the above estimator. While asymptotic normality of $\widehat{\gamma}_{k_n}(x)$ is proved used kernel with bounded support, such as the uniform kernel or the epanechnikov kernel (who both have support on $[-1,1]$), the user have the freedom to pick a kernel with unbounded support such as the Gaussian kernel.
+The implementation rank-transforms the covariate, applies Gaussian kernel
+weights, estimates a local threshold and tail index, and compares the resulting
+conditional forecast with an unconditional Hill benchmark.
 
-The second option is to allow the user to simulate from a distribution for a selected tail index function $x \mapsto \gamma(x)$.
+## What is implemented
 
-Architecture of program: The input of the user is handled with several "get"-function from UserInput.py. The input is parsed onto the rest of the program with the "parser"-functions in parser.py. The latter contains the function "parse_command_line_arguments", which raises a meaningfull exception if the command line arguments are not specified correctly.
+- Conditional and unconditional Hill estimators, including vectorised
+  implementations used in Monte Carlo experiments.
+- Rolling AR(1)-GARCH(1,1) filtering of financial log returns.
+- One-step-ahead conditional and unconditional extreme-quantile forecasts.
+- Binomial coverage tests for realised forecast exceedances.
+- Pareto and Fréchet Markov-chain simulators with explicit random-number
+  generators and deterministic seeding.
+- Parameter-grid simulation studies parallelised with joblib.
+- Matplotlib and Plotly reporting for estimates, forecasts, violations, bias,
+  and mean squared error.
 
-It is important to note that the above estimator needs to be implemented on a stationary, non-negative time series. As many stationary time series such as log-return are centered around zero, the estimation routines in this program is split into estimating the tail index of both of the following to set of time series $(Y_n,X_n)_{Y_n > 0}$ and $(Y_n,X_n)_{Y_n < 0}$. This i advantageous since it allows for the positive part of $Y_n$ given $X_n$ to have a different tail index than that of the negative side.
+The financial forecasting pipeline converts log returns to losses, estimates
+the AR-GARCH model on each rolling window, applies the tail estimators to
+positive standardised residuals, and maps the forecast back to the return
+scale.
 
-The file HillEstimator.py implement the above estimator in the function "estimate". It outputs a list of the vectors $x \in \mathbb{R}^{n}$ and $k_n \in \mathbb{R}^{n}$, as well as the array $(x,k_n) \mapsto \widehat{\gamma}_{k_n}(x) \in \in \mathbb{R}^{\otimes 2n}$, which is the estimator of interest.
+## Repository layout
 
-The file Plot.py implements three kinds of plots. 1) Plotting the given time series side by side for visual comparison. 2) Plotting the conditional hill estimator either for fixed $x$ as a function of $k_n$ or as a function of $x$ for fixed $k_n$. 3) Plotting the 3d-plot $(x,k_n) \mapsto \widehat{\gamma}_{k_n}(x)$.
+| Path | Purpose |
+| --- | --- |
+| **src/estimators/** | Conditional Hill, unconditional Hill, AR-GARCH, and rolling quantile forecasts |
+| **src/simulation/** | Markov-chain simulators and parallel Monte Carlo studies |
+| **src/backtesting/** | Exceedance counts, binomial tests, and batch backtests |
+| **src/data/** | Market-data cache, CSV parsing, transforms, and tail preparation |
+| **src/plotting/** | Forecast and simulation figures |
+| **tests/** | Focused estimator, alignment, data-contract, and reproducibility checks |
+| **Plots/forecasting/** | Selected rolling-forecast and violation figures |
+| **Plots/simulation/** | Simulation figures grouped by innovation family |
 
+## Setup
 
+Python 3.12 is the currently tested version.
 
-## How to run the program:
+    git clone --branch RV_markov_chains https://github.com/bqj162/conditional-hill-estimator.git
+    cd conditional-hill-estimator
+    python3.12 -m venv .venv
+    source .venv/bin/activate
+    python -m pip install -r requirements.txt
 
-### Inputs:
-The program takes *either* a time series csv file, *or* specified stock tickers:
+Market data are downloaded through yfinance and cached as Parquet files under
+the user's cache directory. The cache is not part of the repository.
 
-- -s --stocks: string of two stock tickers, e.g. "AAPL,MSFT"
+## Running the rolling financial forecast
 
-- -fd --from_date: date from which to download stock price history, e.g. "2000-01-01"
+The current entry point estimates the 0.95 loss quantile with a 500-observation
+rolling fitting window and reports conditional and unconditional coverage
+tests:
 
-- -td --to_date: date to which to download stock price history, e.g. "2024-11-01"
+    python main.py \
+      --stocks "^GDAXI" \
+      --from_date "2005-01-01" \
+      --to_date "2025-07-01" \
+      --transform_type log_diff
 
-- -t --transform_type: applies specified transformation to timeseries. Current options: log_diff
+For backwards compatibility, the repeated form **^GDAXI,^GDAXI** is also
+accepted by the univariate forecast entry point.
 
-- -f --file_path: location of time series csv file with 3 columns: time, covariate, rv.
+CSV input must contain exactly three columns in this order: time, covariate,
+and response.
 
-### Outputs:
-- Output.html file
+    python main.py --file_path path/to/time_series.csv --transform_type log_diff
 
-### Examples:
-- python3 conditional_hill_estimator.py -s "AAPL,MSFT" -fd "2000-01-01" -td "2024-11-01" -t log_diff
+The rolling forecast is intentionally computationally expensive: an
+AR-GARCH model and two tail estimators are fitted at each date.
 
-- python3 conditional_hill_estimator.py -s "TSLA,NVDA" -t log_diff
+## Checks
 
-- python3 conditional_hill_estimator.py -f "time_series.csv" -t log_diff
+The branch runs the same checks locally and in GitHub Actions:
 
-- python3 conditional_hill_estimator.py -f "time_series.csv"
+    python -m pip install -r requirements-dev.txt
+    ruff check .
+    pyright
+    python -m pytest
 
-## Classes:
-- conditional_hill_estimator.py: 
-main script that calls all relevant scripts to save and produce the desired html file
+The tests are deliberately focused on the contracts most important for the
+research results: scalar/vectorised estimator agreement, one-step forecast
+alignment, loss-tail construction, deterministic simulation, and input
+validation.
 
-- HillEstimator.py
-This file takes a time series as input. The function estimate() calls the function gamma_full() to provide the values of the conditional Hill Estimator for each pair of x and k_n values.
-The function gamma_full() takes a covariate process and a conditionally regularly varying process and produces the values of the conditional Hill Estimator. The output is a list of $x$’s, $k_n$’s and $\gamma_{k_n}(x)$.
-The function gamma_automatic() calculates the conditional hill estimate for a given covariate process and a conditionally regularly varying process and one given value of $x$.
+## Selected outputs
 
-- HTML.py takes a list of plots as input, from which is both saves the html of with plots and displays them
+- [Conditional and unconditional forecast violations for DAX losses](Plots/forecasting/GDAXI_loss_q0.95_violations.pdf)
+- [Conditional and unconditional DAX loss-quantile forecasts](Plots/forecasting/GDAXI_loss_q0.95_quantiles.pdf)
+- [Fréchet simulation bias and MSE across quantile levels](Plots/simulation/frechet/bias_mse_q_0.95_0.99.pdf)
 
-- parser.py parses the command line inputs and formats accordingly. 
+These figures are experiment outputs rather than benchmark claims. The paper
+and simulation design are still being developed. Newly generated forecast
+filenames also include their forecast-date range, while simulation figures
+record the innovation family in their title, filename, directory, and PDF
+metadata.
 
-- Plots.py is responsible for producing both marginal time series plots and plotting the Conditional Hill Estimator
+## Current limitations
 
-- StockTicker.py is a tiny wrapper around yfinance
+- Threshold and bandwidth choices are research parameters, not fully automatic
+  tuning procedures.
+- Coverage is currently assessed with an unconditional binomial exceedance
+  test; independence and conditional-coverage diagnostics are planned.
+- The command-line entry point exposes the main financial forecast but not
+  every simulation parameter.
+- yfinance is convenient for reproducible examples but is not a production
+  market-data source.
 
-- TimeSeries.py is a representation of time series including methods to transform and split
+## Reference
 
-- UserInput.py loads and prepares user input for conditional hill estimation and plotting.
+Hill, B. M. (1975). A Simple General Approach to Inference About the Tail of a
+Distribution. *The Annals of Statistics*, 3(5), 1163–1174.
 
+## License
+
+MIT.

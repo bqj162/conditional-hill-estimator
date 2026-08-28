@@ -1,129 +1,94 @@
-import shlex
+from __future__ import annotations
+
 import argparse
+import shlex
+from collections.abc import Sequence
+
 import pandas as pd
-from .TimeSeries import TimeSeries
+
 from UserInput import UserInput
-from types import SimpleNamespace
-from typing import Optional
+from .TimeSeries import TimeSeries
 
-valid_transform_types = [None, "log_diff"]
 
-def parse_command_line_arguments(argv: Optional[list | str] = None, split: bool = True):
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--stocks", dest="stock_tickers")
-    parser.add_argument("-t", "--transform_type", dest="transform_type")
+VALID_TRANSFORM_TYPES = (None, "log_diff")
+
+
+def parse_command_line_arguments(
+    argv: Sequence[str] | str | None = None,
+    split: bool = True,
+) -> UserInput:
+    parser = argparse.ArgumentParser(
+        description="Estimate conditional heavy-tail behaviour from market or CSV data."
+    )
+    parser.add_argument(
+        "-s",
+        "--stocks",
+        dest="stock_tickers",
+        help="Comma-separated tickers (two for conditional estimation; one for forecasting).",
+    )
+    parser.add_argument(
+        "-t",
+        "--transform_type",
+        dest="transform_type",
+        choices=["log_diff"],
+    )
     parser.add_argument("-f", "--file_path", dest="time_series")
     parser.add_argument("-fd", "--from_date", dest="from_date")
     parser.add_argument("-td", "--to_date", dest="to_date")
-    parser.add_argument("-l", "--lag", dest="lag", type=int)
+    parser.add_argument("-l", "--lag", dest="lag", type=int, default=0)
 
-    if argv is None:
-        parsed = parser.parse_args()           
-    else:
-        if isinstance(argv, str) and split:
-            argv = shlex.split(argv)
-        parsed = parser.parse_args(argv)      
+    parsed_argv = shlex.split(argv) if isinstance(argv, str) else argv
+    parsed = parser.parse_args(parsed_argv)
 
     if parsed.stock_tickers is not None and parsed.time_series is not None:
-        raise Exception("Either provide stock tickers or your own time series, but not both.")
+        parser.error("provide stock tickers or a CSV time series, not both")
 
-    stock_tickers = None
-    time_series = None
-
+    stock_tickers: list[str] | None = None
+    time_series: TimeSeries | None = None
     if parsed.stock_tickers is not None:
-        stock_tickers = parsed.stock_tickers.split(",")
-        if not split:
-            if len(stock_tickers) >= 2 and stock_tickers[0] == stock_tickers[1]:
-                stock_tickers = stock_tickers[0]
+        stock_tickers = [ticker.strip() for ticker in parsed.stock_tickers.split(",")]
+        if any(not ticker for ticker in stock_tickers):
+            parser.error("stock tickers cannot be empty")
+
+        # Older examples repeated a ticker for univariate forecasting. Accept
+        # that form while normalising the internal representation.
+        if not split and len(stock_tickers) == 2 and stock_tickers[0] == stock_tickers[1]:
+            stock_tickers = stock_tickers[:1]
     elif parsed.time_series is not None:
         time_series = parse_time_series_file(parsed.time_series)
     else:
-        raise Exception("Need to provide either stock tickers or your own time series.")
+        parser.error("provide either --stocks or --file_path")
 
-    transform_type = parse_transform_type(parsed.transform_type)
-
-    user_input = UserInput(
+    return UserInput(
         stock_tickers=stock_tickers,
         from_date=parsed.from_date,
         to_date=parsed.to_date,
-        transform_type=transform_type,
+        transform_type=parsed.transform_type,
         time_series=time_series,
         lag=parsed.lag,
-        split=split
+        split=split,
     )
-    return user_input
 
 
-def parse_transform_type(transform_type):
-    if transform_type not in valid_transform_types:
-        raise Exception(
-            f"Not a valid transform_type, please use: {valid_transform_types}"
+def parse_transform_type(transform_type: str | None) -> str | None:
+    if transform_type not in VALID_TRANSFORM_TYPES:
+        raise ValueError(
+            f"Unknown transform type {transform_type!r}; expected one of {VALID_TRANSFORM_TYPES}"
         )
     return transform_type
 
 
-def parse_time_series_file(filename):
-    time_series_df = pd.read_csv(filename)
-    time_series = TimeSeries(
-        time=time_series_df.values[:, 0],
-        covariate_name=time_series_df.keys()[1],
-        covariate=time_series_df.values[:, 1],
-        rv_name=time_series_df.keys()[2],
-        rv=time_series_df.values[:, 2]
+def parse_time_series_file(filename: str) -> TimeSeries:
+    frame = pd.read_csv(filename)
+    if frame.shape[1] != 3:
+        raise ValueError(
+            "CSV input must contain exactly three columns: time, covariate, response"
+        )
+
+    return TimeSeries(
+        time=frame.iloc[:, 0].to_numpy(),
+        covariate_name=str(frame.columns[1]),
+        covariate=frame.iloc[:, 1].to_numpy(),
+        rv_name=str(frame.columns[2]),
+        rv=frame.iloc[:, 2].to_numpy(),
     )
-    return time_series
-
-
-# import pandas as pd
-# from TimeSeries import TimeSeries
-# from UserInput import UserInput
-# import argparse
-
-# valid_transform_types = [None, "log_diff"]
-# parser = argparse.ArgumentParser()
-# parser.add_argument("-s", "--stocks", dest="stock_tickers")
-# parser.add_argument("-t", "--transform_type", dest="transform_type")
-# parser.add_argument("-f", "--file_path", dest="time_series")
-# parser.add_argument("-fd", "--from_date", dest="from_date")
-# parser.add_argument("-td", "--to_date", dest="to_date")
-# parser.add_argument("-l", "--lag", dest="lag")
-# args = parser.parse_args()
-
-
-# def parse_command_line_arguments(argv : list[str], split = True):
-#     if args.stock_tickers is not None and args.time_series is not None:
-#         raise Exception("Either provide stock tickers or your own time series, but not both.")
-
-#     stock_tickers = None
-#     time_series = None
-    
-#     if args.stock_tickers is not None:
-#         stock_tickers = args.stock_tickers.split(",")
-#         if not split:
-#             identical_stock_tickers = (stock_tickers[0] == stock_tickers[1])
-#             if identical_stock_tickers : stock_tickers = stock_tickers[0]
-#     elif args.time_series is not None:
-#         time_series = parse_time_series_file(args.time_series)
-#     else:
-#         raise Exception("Need to provide either stock tickers or your own time series.")
-
-#     transform_type = parse_transform_type(args.transform_type)
-#     user_input = UserInput(stock_tickers=stock_tickers, 
-#                            from_date=args.from_date, 
-#                            to_date=args.to_date, 
-#                            transform_type=transform_type, 
-#                            time_series=time_series, 
-#                            lag=args.lag, 
-#                            split = split)
-#     return user_input
-
-# def parse_transform_type(transform_type):
-#     if transform_type not in valid_transform_types:
-#         raise Exception(f"Not a valid transform_type, please use: {[transform_type for transform_type in valid_transform_types]}")
-#     return transform_type
-
-
-# def parse_time_series_file(filename):
-#     time_series_df = pd.read_csv(filename)
-#     time_series = TimeSeries(time=time_series_df.values[:,0], covariate_name= time_series_df.keys()[1], covariate=time_series_df.values[:,1], rv_name = time_series_df.keys()[2], rv=time_series_df.values[:,2])
-#     return time_series

@@ -1,0 +1,11 @@
+arch==8.0.0
+joblib==1.5.2
+KDEpy==1.1.11
+matplotlib==3.9.2
+numpy==2.1.2
+pandas==2.2.3
+plotly==5.24.1
+pyarrow>=17.0
+PyYAML==6.0.2
+scipy==1.14.1
+yfinance==1.6.0
